@@ -5,19 +5,19 @@ YAHFA
 
 YAHFA is a hook framework for Android ART. It provides an efficient way for method hooking or replacement.
 
-Currently it supports Android 6.0 and Android 5.1, on either x86 or armeabi platform.
+Currently it supports Android 6.0 and 5.1, on either `x86` or `armeabi` platform.
 
 ## Build
 
-Import the project in Android Studio and make the module named `library`. 
+Import and build the project in Android Studio. 
 
 ## Demo
 
-The project comes with a demo, which contains an application and a patch plugin. Please refer to [demoApp](https://github.com/rk700/YAHFA/) and [demoPlugin](https://github.com/rk700/YAHFA) for more details.
+The project comes with a demo, which contains an application and a patch plugin. Please refer to [demoApp](https://github.com/rk700/YAHFA/tree/master/demoApp) and [demoPlugin](https://github.com/rk700/YAHFA/tree/master/demoPlugin) for more details.
 
 ## Usage
 
-First please take a look at demoPlugin on how to write a patch plugin.
+First please take a look at [demoPlugin](https://github.com/rk700/YAHFA/tree/master/demoPlugin) on how to create a patch plugin.
 
 To apply a patch, create a new `DexClassLoader` which loads the file:
 
