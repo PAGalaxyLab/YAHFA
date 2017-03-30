@@ -1,0 +1,1 @@
+include ':demoApp', ':library', ':demoPlugin'
