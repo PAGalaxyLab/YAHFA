@@ -3,9 +3,11 @@ YAHFA
 
 ## Introduction
 
-YAHFA is a hook framework for Android ART. It provides an efficient way for method hooking or replacement.
+YAHFA is a hook framework for Android ART. It provides an efficient way for Java method hooking or replacement. Currently it supports Android 6.0 and 5.1, on either `x86` or `armeabi` platform.
 
-Currently it supports Android 6.0 and 5.1, on either `x86` or `armeabi` platform.
+YAHFA is utilized by [VirtualHook](https://github.com/rk700/VirtualHook) so that applications can be hooked without root permission.
+
+Please take a look at this [article](http://rk700.github.io/2017/03/30/YAHFA-introduction/) for a detailed introduction.
 
 ## Build
 
