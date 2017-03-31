@@ -9,11 +9,13 @@ Currently it supports Android 6.0 and 5.1, on either `x86` or `armeabi` platform
 
 ## Build
 
-Import and build the project in Android Studio. 
+Import and build the project in Android Studio. There are three modules:
 
-## Demo
+- `library`. This is the YAHFA library module, which compiles to `.aar` for use.
+- `demoApp`. This is a demo app which would load and apply the plugin.
+- `demoPlugin`. This is a demo plugin which contains the hooks and would be loaded by `demoApp`.
 
-The project comes with a demo, which contains an application and a patch plugin. Please refer to [demoApp](https://github.com/rk700/YAHFA/tree/master/demoApp) and [demoPlugin](https://github.com/rk700/YAHFA/tree/master/demoPlugin) for more details.
+Please refer to [demoApp](https://github.com/rk700/YAHFA/tree/master/demoApp) and [demoPlugin](https://github.com/rk700/YAHFA/tree/master/demoPlugin) for more details on the demo.
 
 ## Usage
 
