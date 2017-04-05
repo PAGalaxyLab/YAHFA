@@ -8,3 +8,4 @@
 /captures
 .externalNativeBuild
 *.swp
+*.aar
