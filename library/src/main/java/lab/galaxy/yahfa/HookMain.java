@@ -4,6 +4,7 @@ import android.app.Application;
 import android.util.Log;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 import dalvik.system.DexClassLoader;
 
@@ -48,6 +49,9 @@ public class HookMain {
                 return;
             }
             Class<?> clazz = Class.forName(className, true, originClassLoader);
+            if(Modifier.isAbstract(clazz.getModifiers())) {
+                Log.w(TAG, "Hook may fail for abstract class: "+className);
+            }
 
             Method hook = null;
             Method backup = null;
