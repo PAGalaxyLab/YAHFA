@@ -3,7 +3,14 @@ YAHFA
 
 ## Introduction
 
-YAHFA is a hook framework for Android ART. It provides an efficient way for Java method hooking or replacement. Currently it supports Android 6.0 and 5.1, on either `x86` or `armeabi` platform.
+YAHFA is a hook framework for Android ART. It provides an efficient way for Java method hooking or replacement. Currently it supports
+
+- Android 5.1(API 22)
+- Android 6.0(API 23)
+- __EXPERIMENTAL__ Android 7.0(API 24)
+- __EXPERIMENTAL__ Android 7.1(API 25)
+
+on either `x86` or `armeabi` platform.
 
 YAHFA is utilized by [VirtualHook](https://github.com/rk700/VirtualHook) so that applications can be hooked without root permission.
 
@@ -43,6 +50,14 @@ You can also omit the default helper and call the following function instead:
 public native void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
                                  Method hook, Method backup);
 ```
+
+## Workaround for Method Inlining
+
+Hook would fail for methods that are compiled to be inlined. A simple workaround is to build the APP with debuggable option on, in which case the inlining optimization will not apply.
+
+## Android N Support
+
+Support for Android N(7.0 and 7.1) is experimental and not stable.
 
 ## License
 

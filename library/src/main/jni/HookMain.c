@@ -7,6 +7,7 @@
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
+void hook_new_entry_24();
 void hook_new_entry_23();
 void hook_new_entry_22();
 
@@ -43,6 +44,19 @@ static unsigned long readAddr(void *addr) {
 
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
     switch(sdkVersion) {
+        case 25:
+        case 24:
+            LOGI("init to SDK %d", sdkVersion);
+            OFFSET_dex_cache_resolved_methods_in_ArtMethod = 20;
+            OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod = 32;
+            OFFSET_entry_point_from_jni_in_ArtMethod = 28;
+            OFFSET_dex_method_index_in_ArtMethod = 12;
+            OFFSET_array_in_PointerArray = 0;
+            OFFSET_ArtMehod_in_Object = 0;
+            pointer_size = sizeof(void *);
+            ArtMethodSize = 36;
+            hook_new_entry = (void *)hook_new_entry_24;
+            break;
         case 23:
             LOGI("init to SDK %d", sdkVersion);
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = 4;
