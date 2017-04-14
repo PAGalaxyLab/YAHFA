@@ -15,3 +15,8 @@ BEGIN_ENTRY hook_new_entry_22
     ldr r0, [r0, #40]
     ldr pc, [r0, #44]
 END_ENTRY hook_new_entry_22
+
+BEGIN_ENTRY hook_new_entry_21
+ldr r0, [r0, #32]
+ldr pc, [r0, #40]
+END_ENTRY hook_new_entry_21

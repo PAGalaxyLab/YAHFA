@@ -13,9 +13,14 @@ BEGIN_ENTRY hook_new_entry_23
     ret
 END_ENTRY hook_new_entry_23
 
-
 BEGIN_ENTRY hook_new_entry_22
     mov 40(%eax), %eax
     push 44(%eax)
     ret
 END_ENTRY hook_new_entry_22
+
+BEGIN_ENTRY hook_new_entry_21
+    mov 32(%eax), %eax
+    push 40(%eax)
+    ret
+END_ENTRY hook_new_entry_21

@@ -5,6 +5,7 @@ YAHFA
 
 YAHFA is a hook framework for Android ART. It provides an efficient way for Java method hooking or replacement. Currently it supports
 
+- Android 5.0(API 21)
 - Android 5.1(API 22)
 - Android 6.0(API 23)
 - __EXPERIMENTAL__ Android 7.0(API 24)
@@ -53,7 +54,7 @@ public native void findAndBackupAndHook(Class targetClass, String methodName, St
 
 ## Workaround for Method Inlining
 
-Hook would fail for methods that are compiled to be inlined. A simple workaround is to build the APP with debuggable option on, in which case the inlining optimization will not apply.
+Hook would fail for methods that are compiled to be inlined. A simple workaround is to build the APP with debuggable option on, in which case the inlining optimization will not apply. However the option `--debuggable` of `dex2oat` is not available until API 23. So please take a look at machine instructions of the target by `oatdump` when a hook doesn't work.
 
 ## Android N Support
 
