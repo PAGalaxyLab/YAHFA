@@ -19,7 +19,7 @@ Please take a look at this [article](http://rk700.github.io/2017/03/30/YAHFA-int
 
 ## Build
 
-Import and build the project in Android Studio. There are three modules:
+Import and build the project in Android Studio(__with Instant Run disabled__). There are three modules:
 
 - `library`. This is the YAHFA library module, which compiles to `.aar` for use.
 - `demoApp`. This is a demo app which would load and apply the plugin.
