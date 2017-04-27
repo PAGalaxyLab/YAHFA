@@ -13,6 +13,7 @@ void hook_new_entry_22();
 void hook_new_entry_21();
 
 static int OFFSET_dex_cache_resolved_methods_in_ArtMethod;
+static int OFFSET_entry_point_from_interpreter_in_ArtMethod;
 static int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 static int OFFSET_entry_point_from_jni_in_ArtMethod;
 static int OFFSET_dex_method_index_in_ArtMethod;
@@ -63,6 +64,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = 4;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod = 36;
             OFFSET_entry_point_from_jni_in_ArtMethod = 32;
+            OFFSET_entry_point_from_interpreter_in_ArtMethod = 28;
             OFFSET_dex_method_index_in_ArtMethod = 20;
             OFFSET_array_in_PointerArray = 12;
             OFFSET_ArtMehod_in_Object = 0;
@@ -75,6 +77,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = 12;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod = 44;
             OFFSET_entry_point_from_jni_in_ArtMethod = 40;
+            OFFSET_entry_point_from_interpreter_in_ArtMethod = 36;
             OFFSET_dex_method_index_in_ArtMethod = 28;
             OFFSET_array_in_PointerArray = 12;
             OFFSET_ArtMehod_in_Object = 8;
@@ -87,6 +90,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = 12;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod = 40;
             OFFSET_entry_point_from_jni_in_ArtMethod = 32;
+            OFFSET_entry_point_from_interpreter_in_ArtMethod = 24;
             OFFSET_dex_method_index_in_ArtMethod = 64;
             OFFSET_array_in_PointerArray = 12;
             OFFSET_ArtMehod_in_Object = 8;
@@ -106,19 +110,31 @@ static void doBackupAndHook(void *originMethod, void *hookMethod, void *backupMe
     }
     else { //do method backup
         void *dexCacheResolvedMethods = (void *)readAddr((void *)((char *)backupMethod+OFFSET_dex_cache_resolved_methods_in_ArtMethod));
-        int methodIndex = read32((void *)((char *)backupMethod+OFFSET_dex_method_index_in_ArtMethod));
+        int methodIndex = read32((void *)((char *)backupMethod+
+                OFFSET_dex_method_index_in_ArtMethod));
         //first update the cached method manually
-        memcpy((void *)((char *)dexCacheResolvedMethods+OFFSET_array_in_PointerArray+pointer_size*methodIndex), (void *)(&backupMethod), pointer_size);
+        memcpy((char *)dexCacheResolvedMethods+OFFSET_array_in_PointerArray+pointer_size*methodIndex,
+               (&backupMethod),
+               pointer_size);
         //then replace the placeholder with original method
-        memcpy((void *)((char *)backupMethod+OFFSET_ArtMehod_in_Object), 
-                (void *)((char *)originMethod+OFFSET_ArtMehod_in_Object), 
+        memcpy((void *)((char *)backupMethod+OFFSET_ArtMehod_in_Object),
+                (void *)((char *)originMethod+OFFSET_ArtMehod_in_Object),
                 ArtMethodSize-OFFSET_ArtMehod_in_Object);
     }
     //do method replacement
     //save the hook method at entry_point_from_jni_
-    memcpy((void *)((char *)originMethod+OFFSET_entry_point_from_jni_in_ArtMethod), (void *)(&hookMethod), pointer_size);
-    //update the entrypoint
-    memcpy((void *)((char *)originMethod+OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod), (void *)(&hook_new_entry), pointer_size);
+    memcpy((char *)originMethod+OFFSET_entry_point_from_jni_in_ArtMethod,
+           &hookMethod,
+           pointer_size);
+    //update the entrypoints
+    memcpy((char *)originMethod+OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
+           &hook_new_entry,
+           pointer_size);
+    if(OFFSET_entry_point_from_interpreter_in_ArtMethod != 0) {
+        memcpy((char *) originMethod + OFFSET_entry_point_from_interpreter_in_ArtMethod,
+               (char *) hookMethod + OFFSET_entry_point_from_interpreter_in_ArtMethod,
+               pointer_size);
+    }
     LOGI("hook and backup done");
 }
 
