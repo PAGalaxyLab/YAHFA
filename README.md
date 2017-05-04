@@ -56,6 +56,41 @@ public native void findAndBackupAndHook(Class targetClass, String methodName, St
 
 Hook would fail for methods that are compiled to be inlined. A simple workaround is to build the APP with debuggable option on, in which case the inlining optimization will not apply. However the option `--debuggable` of `dex2oat` is not available until API 23. So please take a look at machine instructions of the target by `oatdump` when a hook doesn't work.
 
+## Hooking JNI methods
+
+Although YAHFA overwrites `entry_point_from_jni_` for hooking, JNI methods can still be hooked in the same way. For example, the target App contains the following JNI method:
+
+```java
+package lab.galaxy.yahfa.demoApp;
+
+public class ClassWithJNIMethod {
+    static {
+        System.loadLibrary("hello");
+    }
+
+    public native static String fromJNI();
+}
+```
+Then the method `fromJNI` can be hooked with the following plugin code:
+
+```java
+public class Hook_ClassWithJNIMethod_fromJNI {
+    public static String className = "lab.galaxy.yahfa.demoApp.ClassWithJNIMethod";
+    public static String methodName = "fromJNI";
+    public static String methodSig = "()Ljava/lang/String;";
+
+    public static String hook() {
+        Log.w("YAHFA", "calling fromJNI");
+        return origin()+" hooked with YAHFA";
+    }
+
+    public static String origin() {
+        Log.w("YAHFA", "ClassWithJNIMethod.fromJNI() should not be here");
+        return "";
+    }
+}
+```
+
 ## Android N Support
 
 Support for Android N(7.0 and 7.1) is experimental and not stable.
