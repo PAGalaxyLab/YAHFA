@@ -95,7 +95,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             OFFSET_array_in_PointerArray = 12;
             OFFSET_ArtMehod_in_Object = 8;
             pointer_size = sizeof(void *);
-            ArtMethodSize = 64;
+            ArtMethodSize = 72;
             hook_new_entry = (void *)hook_new_entry_21;
             break;
         default:
