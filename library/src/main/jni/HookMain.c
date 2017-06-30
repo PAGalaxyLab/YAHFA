@@ -8,7 +8,7 @@
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
-#define DEFAULT_CAP 128
+#define DEFAULT_CAP 100
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define roundUpTo4(v) ((v+4-1) - ((v+4-1)&3))
@@ -25,7 +25,6 @@ static int SDKVersion;
 static int OFFSET_dex_cache_resolved_methods_in_ArtMethod;
 static int OFFSET_entry_point_from_interpreter_in_ArtMethod;
 static int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
-static int OFFSET_entry_point_from_jni_in_ArtMethod;
 static int OFFSET_dex_method_index_in_ArtMethod;
 static int OFFSET_hotness_count_in_ArtMethod;
 static int OFFSET_array_in_PointerArray;
@@ -179,7 +178,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             LOGI("init to SDK %d", sdkVersion);
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = 20;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod = 32;
-            OFFSET_entry_point_from_jni_in_ArtMethod = 28;
             OFFSET_dex_method_index_in_ArtMethod = 12;
             OFFSET_hotness_count_in_ArtMethod = 18;
             OFFSET_array_in_PointerArray = 0;
@@ -192,7 +190,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             LOGI("init to SDK %d", sdkVersion);
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = 4;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod = 36;
-            OFFSET_entry_point_from_jni_in_ArtMethod = 32;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = 28;
             OFFSET_dex_method_index_in_ArtMethod = 20;
             OFFSET_array_in_PointerArray = 12;
@@ -205,7 +202,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             LOGI("init to SDK %d", sdkVersion);
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = 12;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod = 44;
-            OFFSET_entry_point_from_jni_in_ArtMethod = 40;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = 36;
             OFFSET_dex_method_index_in_ArtMethod = 28;
             OFFSET_array_in_PointerArray = 12;
@@ -218,7 +214,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             LOGI("init to SDK %d", sdkVersion);
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = 12;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod = 40;
-            OFFSET_entry_point_from_jni_in_ArtMethod = 32;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = 24;
             OFFSET_dex_method_index_in_ArtMethod = 64;
             OFFSET_array_in_PointerArray = 12;
