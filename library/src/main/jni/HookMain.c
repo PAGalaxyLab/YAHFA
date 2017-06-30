@@ -124,10 +124,6 @@ static int doInitHookCap(unsigned int cap) {
     return 0;
 }
 
-void Java_lab_galaxy_yahfa_HookMain_initHookCap(JNIEnv *env, jclass clazz, jint cap) {
-    doInitHookCap(MAX(cap, DEFAULT_CAP));
-}
-
 static void *genTrampoline1(void *hookMethod) {
     void *targetAddr;
     if(mprotect(trampolineCode, trampolineCodeSize, PROT_READ | PROT_WRITE) == -1) {
@@ -241,15 +237,16 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
 #endif
 }
 
-void doBackupAndHook(void *originMethod, void *hookMethod, void *backupMethod) {
+static int doBackupAndHook(void *originMethod, void *hookMethod, void *backupMethod) {
     if(hookCount >= hookCap) {
         LOGW("not enough capacity");
         if(doInitHookCap(DEFAULT_CAP)) {
             LOGE("cannot hook method");
-            return;
+            return 1;
         }
     }
 
+//    LOGI("origin method is at %p, hook method is at %p", originMethod, hookMethod);
     if(!backupMethod) {
         LOGW("backup method is null");
     }
@@ -276,7 +273,8 @@ void doBackupAndHook(void *originMethod, void *hookMethod, void *backupMethod) {
                        &newEntryPoint, pointer_size);
             }
             else {
-                LOGW("failed to allocate space for backup method trampoline");
+                LOGE("failed to allocate space for backup method trampoline");
+                return 1;
             }
         }
 //        LOGI("backup method is at %p", backupMethod);
@@ -284,6 +282,10 @@ void doBackupAndHook(void *originMethod, void *hookMethod, void *backupMethod) {
 
     // replace entry point
     void *newEntrypoint = genTrampoline1(hookMethod);
+//    LOGI("origin ep is %p, new ep is %p",
+//         readAddr((char *) originMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod),
+//         newEntrypoint
+//    );
     if(newEntrypoint) {
         memcpy((char *) originMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
                &newEntrypoint,
@@ -291,6 +293,7 @@ void doBackupAndHook(void *originMethod, void *hookMethod, void *backupMethod) {
     }
     else {
         LOGW("failed to allocate space for trampoline");
+        return 1;
     }
 
     if(OFFSET_entry_point_from_interpreter_in_ArtMethod != 0) {
@@ -301,6 +304,7 @@ void doBackupAndHook(void *originMethod, void *hookMethod, void *backupMethod) {
 
     LOGI("hook and backup done");
     hookCount += 1;
+    return 0;
 }
 
 void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass clazz,
@@ -331,9 +335,10 @@ void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass cla
             goto end;
         }
     }
-    doBackupAndHook(targetMethod, (void *)(*env)->FromReflectedMethod(env, hook),
-        backup==NULL ? NULL : (void *)(*env)->FromReflectedMethod(env, backup));
-
+    if(!doBackupAndHook(targetMethod, (void *)(*env)->FromReflectedMethod(env, hook),
+        backup==NULL ? NULL : (void *)(*env)->FromReflectedMethod(env, backup))) {
+        (*env)->NewGlobalRef(env, hook); // keep a global ref so that the hook method would not be GCed
+    }
 end:
     (*env)->ReleaseStringUTFChars(env, methodName, c_methodName);
     (*env)->ReleaseStringUTFChars(env, methodSig, c_methodSig);

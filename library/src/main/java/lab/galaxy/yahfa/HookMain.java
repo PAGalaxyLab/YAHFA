@@ -27,7 +27,6 @@ public class HookMain {
         try {
             Class<?> hookInfoClass = Class.forName("lab.galaxy.yahfa.HookInfo", true, patchClassLoader);
             String[] hookItemNames = (String[])hookInfoClass.getField("hookItemNames").get(null);
-            initHookCap(hookItemNames.length);
             for(String hookItemName : hookItemNames) {
                 doHookItemDefault(patchClassLoader, hookItemName, originClassLoader);
             }
@@ -41,6 +40,7 @@ public class HookMain {
         try {
             Log.i(TAG, "Start hooking with item "+hookItemName);
             Class<?> hookItem = Class.forName(hookItemName, true, patchClassLoader);
+
             String className = (String)hookItem.getField("className").get(null);
             String methodName = (String)hookItem.getField("methodName").get(null);
             String methodSig = (String)hookItem.getField("methodSig").get(null);
@@ -79,6 +79,4 @@ public class HookMain {
                                      Method hook, Method backup);
 
     private native void init(int SDK_version);
-
-    private native void initHookCap(int cap);
 }
