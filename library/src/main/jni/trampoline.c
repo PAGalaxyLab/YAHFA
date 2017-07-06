@@ -116,10 +116,11 @@ static unsigned int t2Size = roundUpToPtrSize(sizeof(trampoline2));
 
 void *genTrampoline1(void *hookMethod) {
     void *targetAddr;
+    /*
     if(mprotect(trampolineCode, trampolineCodeSize, PROT_READ | PROT_WRITE) == -1) {
         LOGE("mprotect RW failed");
         return NULL;
-    }
+    }*/
     targetAddr = trampolineCode + trampolineSize*hookCount;
     memcpy(targetAddr, trampoline1, sizeof(trampoline1)); // do not use t1size since it's a rounded size
 
@@ -131,21 +132,24 @@ void *genTrampoline1(void *hookMethod) {
 #elif defined(__aarch64__)
     memcpy(targetAddr+12, &hookMethod, pointer_size);
 #endif
-
+/*
     if(mprotect(trampolineCode, trampolineCodeSize, PROT_READ | PROT_EXEC) == -1) {
         LOGE("mprotect RX failed");
         return NULL;
     }
+    */
     return targetAddr;
 }
 
 void *genTrampoline2(void *originMethod, void *entryPoint) {
     int i;
     void *targetAddr;
+    /*
     if(mprotect(trampolineCode, trampolineCodeSize, PROT_READ | PROT_WRITE) == -1) {
         LOGE("mprotect RW failed");
         return NULL;
     }
+     */
     targetAddr = trampolineCode + trampolineSize*hookCount + t1Size;
     memcpy(targetAddr, trampoline2, sizeof(trampoline2)); // do not use t2size since it's a rounded size
 
@@ -160,11 +164,12 @@ void *genTrampoline2(void *originMethod, void *entryPoint) {
     memcpy(targetAddr+16, &originMethod, pointer_size);
     memcpy(targetAddr+24, &entryPoint, pointer_size);
 #endif
-
+/*
     if(mprotect(trampolineCode, trampolineCodeSize, PROT_READ | PROT_EXEC) == -1) {
         LOGE("mprotect RX failed");
         return NULL;
     }
+    */
 //    LOGI("trampoline 2 is at %p", targetAddr);
     return targetAddr;
 }
@@ -179,7 +184,7 @@ int doInitHookCap(unsigned int cap) {
         LOGW("allocating new space for trampoline code");
     }
     int allSize = trampolineSize*cap;
-    char *buf = mmap(NULL, allSize, PROT_READ, MAP_ANON | MAP_PRIVATE, -1, 0);
+    char *buf = mmap(NULL, allSize, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
     if(buf == MAP_FAILED) {
         LOGE("mmap failed");
         return 1;
