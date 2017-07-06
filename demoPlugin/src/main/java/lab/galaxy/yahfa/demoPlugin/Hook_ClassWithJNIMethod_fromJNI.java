@@ -11,13 +11,9 @@ public class Hook_ClassWithJNIMethod_fromJNI {
     public static String methodName = "fromJNI";
     public static String methodSig = "()Ljava/lang/String;";
 
+    // calling origin method is no longer available for JNI methods
     public static String hook() {
         Log.w("YAHFA", "calling fromJNI");
-        return origin()+" hooked with YAHFA";
-    }
-
-    public static String origin() {
-        Log.w("YAHFA", "ClassWithJNIMethod.fromJNI() should not be here");
-        return "";
+        return "1234";
     }
 }

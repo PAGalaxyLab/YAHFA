@@ -3,7 +3,7 @@ YAHFA
 
 ## Introduction
 
-YAHFA is a hook framework for Android ART. It provides an efficient way for Java method hooking or replacement. Currently it supports
+YAHFA is a hook framework for Android ART. It provides an efficient way for Java method hooking or replacement. Currently it supports:
 
 - Android 5.0(API 21)
 - Android 5.1(API 22)
@@ -11,7 +11,11 @@ YAHFA is a hook framework for Android ART. It provides an efficient way for Java
 - __EXPERIMENTAL__ Android 7.0(API 24)
 - __EXPERIMENTAL__ Android 7.1(API 25)
 
-on either `x86` or `armeabi` platform.
+with ABI:
+
+- x86
+- armeabi-v7a
+- __EXPERIMENTAL__ arm64-v8a
 
 YAHFA is utilized by [VirtualHook](https://github.com/rk700/VirtualHook) so that applications can be hooked without root permission.
 
@@ -58,7 +62,7 @@ Hook would fail for methods that are compiled to be inlined. A simple workaround
 
 ## Hooking JNI methods
 
-Although YAHFA overwrites `entry_point_from_jni_` for hooking, JNI methods can still be hooked in the same way. For example, the target App contains the following JNI method:
+JNI methods can be hooked without calling origin method. For example, the target App contains the following JNI method:
 
 ```java
 package lab.galaxy.yahfa.demoApp;
@@ -81,12 +85,7 @@ public class Hook_ClassWithJNIMethod_fromJNI {
 
     public static String hook() {
         Log.w("YAHFA", "calling fromJNI");
-        return origin()+" hooked with YAHFA";
-    }
-
-    public static String origin() {
-        Log.w("YAHFA", "ClassWithJNIMethod.fromJNI() should not be here");
-        return "";
+        return "new string";
     }
 }
 ```
