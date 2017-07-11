@@ -11,7 +11,7 @@ static int OFFSET_entry_point_from_interpreter_in_ArtMethod;
 static int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 static int OFFSET_hotness_count_in_ArtMethod;
 static int OFFSET_ArtMehod_in_Object;
-static size_t ArtMethodSize;
+static int ArtMethodSize;
 
 static inline uint32_t read32(void *addr) {
     return *((uint32_t *)addr);
@@ -71,7 +71,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
         memset(trampoline2+5, '\x90', 6);
     }
 #elif defined(__arm__)
-    trampoline1[4] = OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+    trampoline1[4] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
     if(SDKVersion < ANDROID_N) { // do not set hotness_count before N
         for(i=4; i<=16; i+=4) {
             memcpy(trampoline2+i, "\x00\x00\xa0\xe1", 4); // mov r0, r0
@@ -107,7 +107,7 @@ static int doBackupAndHook(void *originMethod, void *hookMethod, void *backupMet
         LOGW("backup method is null");
     }
     else { //do method backup
-        void *realEntryPoint = readAddr((char *) originMethod +
+        void *realEntryPoint = (void *)readAddr((char *) originMethod +
                                         OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod);
         void *newEntryPoint = genTrampoline2(originMethod, realEntryPoint);
         if(newEntryPoint) {

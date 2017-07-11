@@ -17,9 +17,6 @@ public class HookMain {
 
     static {
         System.loadLibrary("yahfa");
-    }
-
-    public HookMain() {
         init(android.os.Build.VERSION.SDK_INT);
     }
 
@@ -78,5 +75,5 @@ public class HookMain {
     public native void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
                                      Method hook, Method backup);
 
-    private native void init(int SDK_version);
+    private static native void init(int SDK_version);
 }

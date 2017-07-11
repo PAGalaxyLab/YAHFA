@@ -183,8 +183,8 @@ int doInitHookCap(unsigned int cap) {
     if(hookCap) {
         LOGW("allocating new space for trampoline code");
     }
-    int allSize = trampolineSize*cap;
-    char *buf = mmap(NULL, allSize, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
+    unsigned int allSize = trampolineSize*cap;
+    unsigned char *buf = mmap(NULL, allSize, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
     if(buf == MAP_FAILED) {
         LOGE("mmap failed");
         return 1;
