@@ -37,7 +37,7 @@ public class HookMain {
         }
     }
 
-    public void doHookItemDefault(ClassLoader patchClassLoader, String hookItemName, ClassLoader originClassLoader) {
+    private void doHookItemDefault(ClassLoader patchClassLoader, String hookItemName, ClassLoader originClassLoader) {
         try {
             Log.i(TAG, "Start hooking with item "+hookItemName);
             Class<?> hookItem = Class.forName(hookItemName, true, patchClassLoader);
@@ -45,6 +45,12 @@ public class HookMain {
             String className = (String)hookItem.getField("className").get(null);
             String methodName = (String)hookItem.getField("methodName").get(null);
             String methodSig = (String)hookItem.getField("methodSig").get(null);
+            int isStatic = 0;
+            try {
+                isStatic = (int) hookItem.getField("isStatic").get(null);
+            }
+            catch (NoSuchFieldException e) {
+            }
 
             if(className == null || className.equals("")) {
                 Log.w(TAG, "No target class. Skipping...");
@@ -76,8 +82,14 @@ public class HookMain {
     }
 
 
+    public void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
+                                     Method hook, Method backup) {
+        findAndBackupAndHook(targetClass, methodName, methodSig, 0, hook, backup);
+    }
+
     public native void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
-                                     Method hook, Method backup);
+                                            int isStatic, // 1: static, -1: virtual, 0: unset(try both)
+                                            Method hook, Method backup);
 
     private static native void init(int SDK_version);
 }

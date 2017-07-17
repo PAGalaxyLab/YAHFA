@@ -11,6 +11,7 @@ public class Hook_ClassWithStaticMethod_tac {
     public static String methodName = "tac";
     public static String methodSig =
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
+    public static int isStatic = 1;
 
     public static String hook(String a, String b, String c, String d) {
         Log.w("YAHFA", "in ClassWithStaticMethod.tac(): "+a+", "+b+", "+c+", "+d);

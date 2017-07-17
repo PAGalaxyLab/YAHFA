@@ -15,7 +15,7 @@ with ABI:
 
 - x86
 - armeabi-v7a
-- __EXPERIMENTAL__ arm64-v8a
+- arm64-v8a
 
 YAHFA is utilized by [VirtualHook](https://github.com/rk700/VirtualHook) so that applications can be hooked without root permission.
 
@@ -33,9 +33,9 @@ Please refer to [demoApp](https://github.com/rk700/YAHFA/tree/master/demoApp) an
 
 ## Usage
 
-First please take a look at [demoPlugin](https://github.com/rk700/YAHFA/tree/master/demoPlugin) on how to create a patch plugin.
+First please take a look at [demoPlugin](https://github.com/rk700/YAHFA/tree/master/demoPlugin) on how to create a hook plugin.
 
-To apply a patch, create a new `DexClassLoader` which loads the file:
+To apply hooks, first create a new `DexClassLoader` which loads the plugin file:
 
 ```java
 DexClassLoader dexClassLoader = new DexClassLoader("/sdcard/demoPlugin-debug.apk",
@@ -52,13 +52,35 @@ hookMain.doHookDefault(dexClassLoader, classLoader);
 You can also omit the default helper and call the following function instead:
 
 ```java
+public void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
+                                 Method hook, Method backup);
+```
+
+or
+
+```java
 public native void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
+                                 int isStatic, // 1: static, -1: virtual, 0: unset(try both)
                                  Method hook, Method backup);
 ```
 
 ## Workaround for Method Inlining
 
-Hook would fail for methods that are compiled to be inlined. A simple workaround is to build the APP with debuggable option on, in which case the inlining optimization will not apply. However the option `--debuggable` of `dex2oat` is not available until API 23. So please take a look at machine instructions of the target by `oatdump` when a hook doesn't work.
+Hooking would fail for methods that are compiled to be inlined. For example:
+
+```
+0x00004d5a: f24a7e81  movw    lr, #42881
+0x00004d5e: f2c73e11  movt    lr, #29457
+0x00004d62: f6495040  movw    r0, #40256
+0x00004d66: f2c70033  movt    r0, #28723
+0x00004d6a: 4641      mov     r1, r8
+0x00004d6c: 1c32      mov     r2, r6
+0x00004d6e: 47f0      blx     lr
+```
+
+Here the value of register `lr` is hardcoded instead of reading from entry point field of `ArtMethod`.
+
+A simple workaround is to build the APP with debuggable option on, in which case the inlining optimization will not apply. However the option `--debuggable` of `dex2oat` is not available until API 23. So please take a look at machine instructions of the target when the hook doesn't work.
 
 ## Hooking JNI methods
 

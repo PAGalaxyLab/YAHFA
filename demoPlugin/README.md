@@ -14,6 +14,7 @@ To hook a method, please create a `Class` which has the following fields:
 - A static `String` field named `className`. This is the name of the class where the target method belongs to
 - A static `String` field named `methodName`. This is the name of the target method
 - A static `String` field named `methodSig`. This is the signature string of the target method
+- (Optional) A static `int` field named `isStatic`. This indicates whether the target method is static(`isStatic=1`) or virtual(`isStatic=-1`).
 
 The above fields are used for finding target method. Besides, the class should have the following methods:
 
