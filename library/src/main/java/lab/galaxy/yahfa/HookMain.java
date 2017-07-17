@@ -5,6 +5,8 @@ import android.util.Log;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.LinkedList;
+import java.util.List;
 
 import dalvik.system.DexClassLoader;
 
@@ -14,6 +16,7 @@ import dalvik.system.DexClassLoader;
 
 public class HookMain {
     private static final String TAG = "YAHFA";
+    private static List<Class<?>> hookInfoClasses = new LinkedList<>();
 
     static {
         System.loadLibrary("yahfa");
@@ -27,6 +30,7 @@ public class HookMain {
             for(String hookItemName : hookItemNames) {
                 doHookItemDefault(patchClassLoader, hookItemName, originClassLoader);
             }
+            hookInfoClasses.add(hookInfoClass);
         }
         catch (Exception e) {
             e.printStackTrace();

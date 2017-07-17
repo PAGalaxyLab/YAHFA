@@ -15,14 +15,19 @@ public class MainApp extends Application {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
 
+        try {
         /*
         Build and put the demoPlugin apk in sdcard before running the demoApp
          */
-        HookMain hookMain = new HookMain();
-        ClassLoader classLoader = getClassLoader();
+            HookMain hookMain = new HookMain();
+            ClassLoader classLoader = getClassLoader();
 
-        DexClassLoader dexClassLoader = new DexClassLoader("/sdcard/demoPlugin-debug.apk",
-                getCodeCacheDir().getAbsolutePath(), null, classLoader);
-        hookMain.doHookDefault(dexClassLoader, classLoader);
+            DexClassLoader dexClassLoader = new DexClassLoader("/sdcard/demoPlugin-debug.apk",
+                    getCodeCacheDir().getAbsolutePath(), null, classLoader);
+            hookMain.doHookDefault(dexClassLoader, classLoader);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
