@@ -5,6 +5,10 @@
     <application
         android:label="@string/app_name"
         android:hasCode="false">
+        <meta-data
+            android:name="yahfa.hook.plugin"
+            android:value="true"
+        />
     </application>
 
 </manifest>
