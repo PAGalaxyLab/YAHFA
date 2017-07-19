@@ -19,7 +19,7 @@ with ABI:
 
 YAHFA is utilized by [VirtualHook](https://github.com/rk700/VirtualHook) so that applications can be hooked without root permission.
 
-Please take a look at this [article](http://rk700.github.io/2017/03/30/YAHFA-introduction/) for a detailed introduction.
+Please take a look at this [article](http://rk700.github.io/2017/03/30/YAHFA-introduction/) and this [one](http://rk700.github.io/2017/06/30/hook-on-android-n/) for a detailed introduction.
 
 ## Build
 
@@ -53,14 +53,6 @@ You can also omit the default helper and call the following function instead:
 
 ```java
 public void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
-                                 Method hook, Method backup);
-```
-
-or
-
-```java
-public native void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
-                                 int isStatic, // 1: static, -1: virtual, 0: unset(try both)
                                  Method hook, Method backup);
 ```
 
