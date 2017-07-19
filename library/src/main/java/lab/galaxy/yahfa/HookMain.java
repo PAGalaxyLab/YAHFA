@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class HookMain {
         init(android.os.Build.VERSION.SDK_INT);
     }
 
-    public void doHookDefault(ClassLoader patchClassLoader, ClassLoader originClassLoader) {
+    public static void doHookDefault(ClassLoader patchClassLoader, ClassLoader originClassLoader) {
         try {
             Class<?> hookInfoClass = Class.forName("lab.galaxy.yahfa.HookInfo", true, patchClassLoader);
             String[] hookItemNames = (String[])hookInfoClass.getField("hookItemNames").get(null);
@@ -37,7 +38,7 @@ public class HookMain {
         }
     }
 
-    private void doHookItemDefault(ClassLoader patchClassLoader, String hookItemName, ClassLoader originClassLoader) {
+    private static void doHookItemDefault(ClassLoader patchClassLoader, String hookItemName, ClassLoader originClassLoader) {
         try {
             Log.i(TAG, "Start hooking with item "+hookItemName);
             Class<?> hookItem = Class.forName(hookItemName, true, patchClassLoader);
@@ -45,12 +46,6 @@ public class HookMain {
             String className = (String)hookItem.getField("className").get(null);
             String methodName = (String)hookItem.getField("methodName").get(null);
             String methodSig = (String)hookItem.getField("methodSig").get(null);
-            int isStatic = 0;
-            try {
-                isStatic = (int) hookItem.getField("isStatic").get(null);
-            }
-            catch (NoSuchFieldException e) {
-            }
 
             if(className == null || className.equals("")) {
                 Log.w(TAG, "No target class. Skipping...");
@@ -82,13 +77,76 @@ public class HookMain {
     }
 
 
-    public void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
+    public static void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
                                      Method hook, Method backup) {
-        findAndBackupAndHook(targetClass, methodName, methodSig, 0, hook, backup);
+        try {
+            int hookParamCount = hook.getParameterTypes().length;
+            int targetParamCount = getParamCountFromSignature(methodSig);
+            Log.d(TAG, "target method param count is "+targetParamCount);
+            boolean isStatic = (hookParamCount == targetParamCount);
+            // virtual method has 'thiz' object as the first parameter
+            findAndBackupAndHook(targetClass, methodName, methodSig, isStatic, hook, backup);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public native void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
-                                            int isStatic, // 1: static, -1: virtual, 0: unset(try both)
+    private static int getParamCountFromSignature(String signature) throws Exception{
+        int index;
+        int count = 0;
+        int seg;
+        try { // Read all declarations between for `(' and `)'
+            if (signature.charAt(0) != '(') {
+                throw new Exception("Invalid method signature: " + signature);
+            }
+            index = 1; // current string position
+            while(signature.charAt(index) != ')') {
+                seg = parseSignature(signature.substring(index));
+                index += seg;
+                count++;
+            }
+
+        } catch (final StringIndexOutOfBoundsException e) { // Should never occur
+            throw new Exception("Invalid method signature: " + signature, e);
+        }
+        return count;
+    }
+
+    private static int parseSignature(String signature) throws Exception {
+        int count = 0;
+        switch (signature.charAt(0)) {
+            case 'B': // byte
+            case 'C': // char
+            case 'D': // double
+            case 'F': // float
+            case 'I': // int
+            case 'J': // long
+            case 'S': // short
+            case 'Z': // boolean
+            case 'V': // void
+                count++;
+                break;
+            case 'L': // class
+                count++; // char L
+                while(signature.charAt(count) != ';') {
+                    count++;
+                }
+                count++; // char ;
+                break;
+            case '[': // array
+                count++; // char [
+                count += parseSignature(signature.substring(count));
+                break;
+            default:
+                throw new Exception("Invalid type: " + signature);
+        }
+        return count;
+    }
+
+
+    private static native void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
+                                            boolean isStatic,
                                             Method hook, Method backup);
 
     private static native void init(int SDK_version);

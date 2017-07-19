@@ -11,7 +11,6 @@ public class Hook_ClassWithVirtualMethod_tac {
     public static String methodName = "tac";
     public static String methodSig =
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
-    public static int isStatic = -1;
 
     public static String hook(Object thiz, String a, String b, String c, String d) {
         Log.w("YAHFA", "in ClassWithVirtualMethod.tac(): "+a+", "+b+", "+c+", "+d);

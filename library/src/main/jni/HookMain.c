@@ -148,7 +148,7 @@ static int doBackupAndHook(void *originMethod, void *hookMethod, void *backupMet
 }
 
 void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass clazz,
-    jclass targetClass, jstring methodName, jstring methodSig, jint isStatic, jobject hook, jobject backup) {
+    jclass targetClass, jstring methodName, jstring methodSig, jboolean isStatic, jobject hook, jobject backup) {
     if(!methodName || !methodSig) {
         LOGE("empty method name or signature");
         return;
@@ -165,18 +165,11 @@ void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass cla
         LOGE("Not initialized");
         goto end;
     }
-    if(isStatic == -1) { // non-static
+    if(!isStatic) { // non-static
         targetMethod = (void *) (*env)->GetMethodID(env, targetClass, c_methodName, c_methodSig);
     }
-    else if(isStatic == 1) { // static
+    else {// static
         targetMethod = (void *)(*env)->GetStaticMethodID(env, targetClass, c_methodName, c_methodSig);
-    }
-    else {
-        targetMethod = (void *) (*env)->GetMethodID(env, targetClass, c_methodName, c_methodSig);
-        if((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env); //cannot find non-static method, try finding static method
-            targetMethod = (void *)(*env)->GetStaticMethodID(env, targetClass, c_methodName, c_methodSig);
-        }
     }
 
     if((*env)->ExceptionCheck(env)) {
