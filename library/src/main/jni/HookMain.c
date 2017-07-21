@@ -24,13 +24,19 @@ static inline uint64_t read64(void *addr) {
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
     int i;
     SDKVersion = sdkVersion;
+    LOGI("init to SDK %d", sdkVersion);
     switch(sdkVersion) {
+        case ANDROID_O:
+            OFFSET_ArtMehod_in_Object = 0;
+            OFFSET_hotness_count_in_ArtMethod = 4*4+2;
+            OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
+                    roundUpToPtrSize(4*4+2*2) + pointer_size*2;
+            ArtMethodSize = roundUpToPtrSize(4*4+2*2)+pointer_size*3;
+            break;
         case ANDROID_N2:
         case ANDROID_N:
-            LOGI("init to SDK %d", sdkVersion);
             OFFSET_ArtMehod_in_Object = 0;
-            OFFSET_hotness_count_in_ArtMethod = 4*4+2 ; // sizeof(GcRoot<mirror::Class>) = 4
-
+            OFFSET_hotness_count_in_ArtMethod = 4*4+2; // sizeof(GcRoot<mirror::Class>) = 4
             // ptr_sized_fields_ is rounded up to pointer_size in ArtMethod
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     roundUpToPtrSize(4*4+2*2) + pointer_size*3;
@@ -38,7 +44,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             ArtMethodSize = roundUpToPtrSize(4*4+2*2)+pointer_size*4;
             break;
         case ANDROID_M:
-            LOGI("init to SDK %d", sdkVersion);
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = roundUpToPtrSize(4*7);
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
@@ -46,7 +51,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             ArtMethodSize = roundUpToPtrSize(4*7)+pointer_size*3;
             break;
         case ANDROID_L2:
-            LOGI("init to SDK %d", sdkVersion);
             OFFSET_ArtMehod_in_Object = 4*2;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = roundUpToPtrSize(OFFSET_ArtMehod_in_Object+4*7);
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
@@ -54,7 +58,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             ArtMethodSize = OFFSET_entry_point_from_interpreter_in_ArtMethod+pointer_size*3;
             break;
         case ANDROID_L:
-            LOGI("init to SDK %d", sdkVersion);
             OFFSET_ArtMehod_in_Object = 4*2;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = OFFSET_ArtMehod_in_Object+4*4;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
@@ -81,10 +84,10 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
     if(SDKVersion < ANDROID_N) { // do not set hotness_count before N
         memcpy(trampoline2+4, "\x1f\x20\x03\xd5", 4); // nop
         if(SDKVersion == ANDROID_L2) {
-            memcpy(trampoline1+4, "\x10\x1c\x40\xf9", 4); //101c40f9 ; ldr x16, [x0, #56]
+            memcpy(trampoline1+4, "\x10\x1c\x40\xf9", 4); //101c40f9 ; ldr x16, [x0, #56] set entry point offset
         }
         else if(SDKVersion == ANDROID_L) {
-            memcpy(trampoline1+4, "\x10\x14\x40\xf9", 4); //101440f9 ; ldr x16, [x0, #40]
+            memcpy(trampoline1+4, "\x10\x14\x40\xf9", 4); //101440f9 ; ldr x16, [x0, #40] set entry point offset
         }
     }
 #endif
