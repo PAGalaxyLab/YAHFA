@@ -59,9 +59,9 @@ public class HookMain {
             Method hook = null;
             Method backup = null;
             for (Method method : hookItem.getDeclaredMethods()) {
-                if (method.getName().equals("hook")) {
+                if (method.getName().equals("hook") && Modifier.isStatic(method.getModifiers())) {
                     hook = method;
-                } else if (method.getName().equals("origin")) {
+                } else if (method.getName().equals("origin")  && Modifier.isStatic(method.getModifiers())) {
                     backup = method;
                 }
             }
