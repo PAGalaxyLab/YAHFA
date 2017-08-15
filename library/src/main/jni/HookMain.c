@@ -177,7 +177,7 @@ void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass cla
 
     if((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
-        LOGE("Cannot find target method %s%s", c_methodName, c_methodSig);
+        LOGE("Cannot find target method %s%s%s", isStatic ? "static " : "", c_methodName, c_methodSig);
         goto end;
     }
 
