@@ -1,6 +1,7 @@
 #include "jni.h"
 #include <string.h>
 #include <sys/mman.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "env.h"
@@ -110,9 +111,22 @@ static int doBackupAndHook(void *originMethod, void *hookMethod, void *backupMet
         LOGW("backup method is null");
     }
     else { //do method backup
+        // have to copy the whole origin ArtMethod here
+        // if the origin method calls other methods which are to be resolved
+        // then ToDexPC would be invoked for the caller(origin method)
+        // in which case ToDexPC would use the entrypoint as a base for mapping pc to dex offset
+        // so any changes to the origin method's entrypoint would result in a wrong dex offset
+        // and artQuickResolutionTrampoline would fail for methods called by the origin method
+        void *originMethodCopy = malloc(ArtMethodSize);
+        if(!originMethodCopy) {
+            LOGE("malloc failed for copying origin method");
+            return 1;
+        }
+        memcpy(originMethodCopy, originMethod, ArtMethodSize);
+
         void *realEntryPoint = (void *)readAddr((char *) originMethod +
                                         OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod);
-        void *newEntryPoint = genTrampoline2(originMethod, realEntryPoint);
+        void *newEntryPoint = genTrampoline2(originMethodCopy, realEntryPoint);
         if(newEntryPoint) {
             memcpy((char *) backupMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
                    &newEntryPoint, pointer_size);
