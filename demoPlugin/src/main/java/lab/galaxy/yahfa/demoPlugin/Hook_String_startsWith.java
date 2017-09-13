@@ -19,4 +19,9 @@ public class Hook_String_startsWith {
         Log.w("YAHFA", "String.startsWith() should not be here");
         return false;
     }
+
+    public static boolean copy(String thiz, String prefix) {
+        Log.w("YAHFA", "String.startsWith() should not be here");
+        return false;
+    }
 }

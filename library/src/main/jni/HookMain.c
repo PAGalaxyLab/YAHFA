@@ -94,7 +94,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
 #endif
 }
 
-static int doBackupAndHook(void *originMethod, void *hookMethod, void *backupMethod) {
+static int doBackupAndHook(void *targetMethod, void *hookMethod, void *originMethod, void *copyMethod) {
     if(hookCount >= hookCap) {
         LOGW("not enough capacity. Allocating...");
         if(doInitHookCap(DEFAULT_CAP)) {
@@ -104,31 +104,27 @@ static int doBackupAndHook(void *originMethod, void *hookMethod, void *backupMet
         LOGI("Allocating done");
     }
 
-    LOGI("origin method is at %p, hook method is at %p, backup method is at %p",
-         originMethod, hookMethod, backupMethod);
+    LOGI("target method is at %p, hook method is at %p, origin method is at %p, copy method is at %p",
+         targetMethod, hookMethod, originMethod, copyMethod);
 
-    if(!backupMethod) {
-        LOGW("backup method is null");
+    if(!originMethod || !copyMethod) {
+        LOGW("Origin method or copy method is null. Cannot call origin");
     }
     else { //do method backup
-        // have to copy the whole origin ArtMethod here
-        // if the origin method calls other methods which are to be resolved
+        // have to copy the whole target ArtMethod here
+        // if the target method calls other methods which are to be resolved
         // then ToDexPC would be invoked for the caller(origin method)
         // in which case ToDexPC would use the entrypoint as a base for mapping pc to dex offset
-        // so any changes to the origin method's entrypoint would result in a wrong dex offset
+        // so any changes to the target method's entrypoint would result in a wrong dex offset
         // and artQuickResolutionTrampoline would fail for methods called by the origin method
-        void *originMethodCopy = malloc(ArtMethodSize);
-        if(!originMethodCopy) {
-            LOGE("malloc failed for copying origin method");
-            return 1;
-        }
-        memcpy(originMethodCopy, originMethod, ArtMethodSize);
 
-        void *realEntryPoint = (void *)readAddr((char *) originMethod +
+        memcpy(copyMethod, targetMethod, ArtMethodSize);
+
+        void *realEntryPoint = (void *)readAddr((char *) targetMethod +
                                         OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod);
-        void *newEntryPoint = genTrampoline2(originMethodCopy, realEntryPoint);
+        void *newEntryPoint = genTrampoline2(copyMethod, realEntryPoint);
         if(newEntryPoint) {
-            memcpy((char *) backupMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
+            memcpy((char *) originMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
                    &newEntryPoint, pointer_size);
         }
         else {
@@ -144,7 +140,7 @@ static int doBackupAndHook(void *originMethod, void *hookMethod, void *backupMet
 //         newEntrypoint
 //    );
     if(newEntrypoint) {
-        memcpy((char *) originMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
+        memcpy((char *) targetMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
                &newEntrypoint,
                pointer_size);
     }
@@ -154,7 +150,7 @@ static int doBackupAndHook(void *originMethod, void *hookMethod, void *backupMet
     }
 
     if(OFFSET_entry_point_from_interpreter_in_ArtMethod != 0) {
-        memcpy((char *) originMethod + OFFSET_entry_point_from_interpreter_in_ArtMethod,
+        memcpy((char *) targetMethod + OFFSET_entry_point_from_interpreter_in_ArtMethod,
                (char *) hookMethod + OFFSET_entry_point_from_interpreter_in_ArtMethod,
                pointer_size);
     }
@@ -165,7 +161,8 @@ static int doBackupAndHook(void *originMethod, void *hookMethod, void *backupMet
 }
 
 void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass clazz,
-    jclass targetClass, jstring methodName, jstring methodSig, jboolean isStatic, jobject hook, jobject backup) {
+    jclass targetClass, jstring methodName, jstring methodSig, jboolean isStatic,
+    jobject hook, jobject origin, jobject copy) {
     if(!methodName || !methodSig) {
         LOGE("empty method name or signature");
         return;
@@ -195,8 +192,12 @@ void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass cla
         goto end;
     }
 
-    if(!doBackupAndHook(targetMethod, (void *)(*env)->FromReflectedMethod(env, hook),
-        backup==NULL ? NULL : (void *)(*env)->FromReflectedMethod(env, backup))) {
+    if(!doBackupAndHook(
+            targetMethod,
+            (void *)(*env)->FromReflectedMethod(env, hook),
+            origin==NULL ? NULL : (void *)(*env)->FromReflectedMethod(env, origin),
+            copy==NULL ? NULL : (void *)(*env)->FromReflectedMethod(env, copy)
+    )) {
         (*env)->NewGlobalRef(env, hook); // keep a global ref so that the hook method would not be GCed
     }
 end:

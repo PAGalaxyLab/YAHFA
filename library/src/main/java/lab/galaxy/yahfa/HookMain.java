@@ -57,19 +57,22 @@ public class HookMain {
             }
 
             Method hook = null;
-            Method backup = null;
+            Method origin = null;
+            Method copy = null;
             for (Method method : hookItem.getDeclaredMethods()) {
                 if (method.getName().equals("hook") && Modifier.isStatic(method.getModifiers())) {
                     hook = method;
-                } else if (method.getName().equals("origin")  && Modifier.isStatic(method.getModifiers())) {
-                    backup = method;
+                } else if (method.getName().equals("origin") && Modifier.isStatic(method.getModifiers())) {
+                    origin = method;
+                } else if (method.getName().equals("copy") && Modifier.isStatic(method.getModifiers())) {
+                    copy = method;
                 }
             }
             if (hook == null) {
                 Log.e(TAG, "Cannot find hook for "+methodName);
                 return;
             }
-            findAndBackupAndHook(clazz, methodName, methodSig, hook, backup);
+            findAndBackupAndHook(clazz, methodName, methodSig, hook, origin, copy);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -78,14 +81,14 @@ public class HookMain {
 
 
     public static void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
-                                     Method hook, Method backup) {
+                                     Method hook, Method origin, Method copy) {
         try {
             int hookParamCount = hook.getParameterTypes().length;
             int targetParamCount = getParamCountFromSignature(methodSig);
             Log.d(TAG, "target method param count is "+targetParamCount);
             boolean isStatic = (hookParamCount == targetParamCount);
             // virtual method has 'thiz' object as the first parameter
-            findAndBackupAndHook(targetClass, methodName, methodSig, isStatic, hook, backup);
+            findAndBackupAndHook(targetClass, methodName, methodSig, isStatic, hook, origin, copy);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -147,7 +150,7 @@ public class HookMain {
 
     private static native void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
                                             boolean isStatic,
-                                            Method hook, Method backup);
+                                            Method hook, Method origin, Method copy);
 
     private static native void init(int SDK_version);
 }

@@ -21,4 +21,9 @@ public class Hook_ClassWithVirtualMethod_tac {
         Log.w("YAHFA", "ClassWithVirtualMethod.tac() should not be here");
         return "";
     }
+
+    public static String copy(Object thiz, String a, String b, String c, String d) {
+        Log.w("YAHFA", "ClassWithVirtualMethod.tac() should not be here");
+        return "";
+    }
 }

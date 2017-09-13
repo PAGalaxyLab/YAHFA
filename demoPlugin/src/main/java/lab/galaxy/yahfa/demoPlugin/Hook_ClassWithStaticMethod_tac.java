@@ -21,4 +21,9 @@ public class Hook_ClassWithStaticMethod_tac {
         Log.w("YAHFA", "ClassWithStaticMethod.tac() should not be here");
         return "";
     }
+
+    public static String copy(String a, String b, String c, String d) {
+        Log.w("YAHFA", "ClassWithStaticMethod.tac() should not be here");
+        return "";
+    }
 }

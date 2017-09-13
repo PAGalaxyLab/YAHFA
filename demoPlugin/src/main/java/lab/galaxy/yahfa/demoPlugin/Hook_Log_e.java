@@ -19,4 +19,9 @@ public class Hook_Log_e {
         Log.w("YAHFA", "Log.e() should not be here");
         return 1;
     }
+
+    public static int copy(String tag, String msg) {
+        Log.w("YAHFA", "Log.e() should not be here");
+        return 1;
+    }
 }

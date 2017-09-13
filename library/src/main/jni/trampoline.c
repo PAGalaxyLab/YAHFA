@@ -55,9 +55,9 @@ static unsigned int t1Size = roundUpToPtrSize(sizeof(trampoline1));
 #endif
 
 // trampoline2:
-// 1 set eax/r0/x0 to the copy of origin ArtMethod addr,
-// 2. clear hotness_count of the copy origin ArtMethod(only after Android N)
-// 3. jump into origin's real entry point
+// 1. set eax/r0/x0 to the copy ArtMethod addr,
+// 2. clear hotness_count of the copy ArtMethod(only after Android N)
+// 3. jump into target's real entry point
 #if defined(__i386__)
 // b8 21 43 65 87 ; mov eax, 0x87654321
 // 66 c7 40 12 00 00 ; mov word [eax + 0x12], 0

@@ -14,6 +14,16 @@ public class Hook_ClassWithJNIMethod_fromJNI {
     // calling origin method is no longer available for JNI methods
     public static String hook() {
         Log.w("YAHFA", "calling fromJNI");
+        return origin();
+    }
+
+    public static String origin() {
+        Log.w("YAHFA", "calling fromJNI");
+        return "1234";
+    }
+
+    public static String copy() {
+        Log.w("YAHFA", "calling fromJNI");
         return "1234";
     }
 }
