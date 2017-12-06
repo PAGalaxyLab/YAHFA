@@ -16,9 +16,9 @@ extern unsigned char trampoline1[];
 extern unsigned char trampoline2[];
 
 int doInitHookCap(unsigned int cap);
-void *genTrampoline1(void *hookMethod, void *backupMethod);
-void *genTrampoline2(void *originMethod, void *entryPoint);
+void setupTrampoline();
+void *genTrampoline(void *hookMethod, void *backupMethod);
 
-#define DEFAULT_CAP 64 //size of each trampoline area would be no more than 4k Bytes(one page)
+#define DEFAULT_CAP 100 //size of each trampoline area would be no more than 4k Bytes(one page)
 
 #endif //YAHFA_TAMPOLINE_H

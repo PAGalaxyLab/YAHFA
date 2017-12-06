@@ -14,11 +14,12 @@ public class Hook_ClassWithStaticMethod_tac {
 
     public static String hook(String a, String b, String c, String d) {
         Log.w("YAHFA", "in ClassWithStaticMethod.tac(): "+a+", "+b+", "+c+", "+d);
-        return backup(a, b, c, d);
+        return "test"+a;
     }
-
+    /*
     public static String backup(String a, String b, String c, String d) {
         Log.w("YAHFA", "ClassWithStaticMethod.tac() should not be here");
         return "";
     }
+    */
 }

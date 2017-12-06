@@ -8,8 +8,9 @@ YAHFA is a hook framework for Android ART. It provides an efficient way for Java
 - Android 5.0(API 21)
 - Android 5.1(API 22)
 - Android 6.0(API 23)
-- __EXPERIMENTAL__ Android 7.0(API 24)
-- __EXPERIMENTAL__ Android 7.1(API 25)
+- Android 7.0(API 24)
+- Android 7.1(API 25)
+- Android 8.0(API 26)
 
 with ABI:
 
@@ -73,40 +74,6 @@ Hooking would fail for methods that are compiled to be inlined. For example:
 Here the value of register `lr` is hardcoded instead of reading from entry point field of `ArtMethod`.
 
 A simple workaround is to build the APP with debuggable option on, in which case the inlining optimization will not apply. However the option `--debuggable` of `dex2oat` is not available until API 23. So please take a look at machine instructions of the target when the hook doesn't work.
-
-## Hooking JNI methods
-
-JNI methods can be hooked without calling origin method. For example, the target App contains the following JNI method:
-
-```java
-package lab.galaxy.yahfa.demoApp;
-
-public class ClassWithJNIMethod {
-    static {
-        System.loadLibrary("hello");
-    }
-
-    public native static String fromJNI();
-}
-```
-Then the method `fromJNI` can be hooked with the following plugin code:
-
-```java
-public class Hook_ClassWithJNIMethod_fromJNI {
-    public static String className = "lab.galaxy.yahfa.demoApp.ClassWithJNIMethod";
-    public static String methodName = "fromJNI";
-    public static String methodSig = "()Ljava/lang/String;";
-
-    public static String hook() {
-        Log.w("YAHFA", "calling fromJNI");
-        return "new string";
-    }
-}
-```
-
-## Android N Support
-
-Support for Android N(7.0 and 7.1) is experimental and not stable.
 
 ## License
 

@@ -6,6 +6,12 @@ package lab.galaxy.yahfa.demoApp;
 
 public class ClassWithStaticMethod {
     public static String tac(String a, String b, String c, String d) {
-        return d+c+b+a;
+        try {
+            return d + c + b + a;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }
