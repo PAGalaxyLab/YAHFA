@@ -15,12 +15,19 @@ static unsigned int trampolineSize; // trampoline size required for each hook
 unsigned int hookCap = 0;
 unsigned int hookCount = 0;
 
-// trampoline1: set eax/r0/x0 to the hook ArtMethod addr and then jump into its entry point
+// trampoline1:
+// 1. clear hotness_count of the backup ArtMethod(only after Android N) (only after Android N)
+// 2. set eax/r0/x0 to the hook ArtMethod addr
+// 3. jump into its entry point
 #if defined(__i386__)
-// b8 78 56 34 12 ; mov eax, 0x12345678
+// b8 21 43 65 87 ; mov eax, 0x87654321 (addr of the backup method)
+// 66 c7 40 12 00 00 ; mov word [eax + 0x12], 0
+// b8 78 56 34 12 ; mov eax, 0x12345678 (addr of the hook method)
 // ff 70 20 ; push dword [eax + 0x20]
 // c3 ; ret
 unsigned char trampoline1[] = {
+        0xb8, 0x21, 0x43, 0x65, 0x87,
+        0x66, 0xc7, 0x40, 0x12, 0x00, 0x00,
         0xb8, 0x78, 0x56, 0x34, 0x12,
         0xff, 0x70, 0x20,
         0xc3
@@ -114,30 +121,30 @@ unsigned char trampoline2[] = {
 static unsigned int t2Size = roundUpToPtrSize(sizeof(trampoline2));
 #endif
 
-void *genTrampoline1(void *hookMethod) {
+void *genTrampoline1(void *hookMethod, void *backupMethod) {
     void *targetAddr;
-    /*
-    if(mprotect(trampolineCode, trampolineCodeSize, PROT_READ | PROT_WRITE) == -1) {
-        LOGE("mprotect RW failed");
-        return NULL;
-    }*/
+
     targetAddr = trampolineCode + trampolineSize*hookCount;
     memcpy(targetAddr, trampoline1, sizeof(trampoline1)); // do not use t1size since it's a rounded size
 
     // replace with the hook ArtMethod addr
 #if defined(__i386__)
-    memcpy(targetAddr+1, &hookMethod, pointer_size);
+    memcpy(targetAddr+12, &hookMethod, pointer_size);
+    if(SDKVersion >= ANDROID_N && backupMethod) {
+        LOGE("set clear hc");
+        memcpy(targetAddr+1, &backupMethod, pointer_size);
+        return targetAddr;
+    }
+    else {
+        return targetAddr+11;
+    }
+
 #elif defined(__arm__)
     memcpy(targetAddr+8, &hookMethod, pointer_size);
 #elif defined(__aarch64__)
     memcpy(targetAddr+12, &hookMethod, pointer_size);
 #endif
-/*
-    if(mprotect(trampolineCode, trampolineCodeSize, PROT_READ | PROT_EXEC) == -1) {
-        LOGE("mprotect RX failed");
-        return NULL;
-    }
-    */
+
     return targetAddr;
 }
 
@@ -175,7 +182,13 @@ void *genTrampoline2(void *originMethod, void *entryPoint) {
 }
 
 int doInitHookCap(unsigned int cap) {
-    trampolineSize = t1Size + t2Size;
+//    trampolineSize = t1Size + t2Size;
+#if defined(__i386__)
+    trampoline1[8] = OFFSET_hotness_count_in_ArtMethod;
+    trampoline1[18] = OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+#endif
+
+    trampolineSize = t1Size;
     if(cap == 0) {
         LOGE("invalid capacity: %d", cap);
         return 1;

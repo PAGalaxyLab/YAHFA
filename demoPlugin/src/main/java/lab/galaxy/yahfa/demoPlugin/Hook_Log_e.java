@@ -12,15 +12,10 @@ public class Hook_Log_e {
     public static String methodSig = "(Ljava/lang/String;Ljava/lang/String;)I";
     public static int hook(String tag, String msg) {
         Log.w("YAHFA", "in Log.e(): "+tag+", "+msg);
-        return origin(tag, msg);
+        return backup(tag, msg);
     }
 
-    public static int origin(String tag, String msg) {
-        Log.w("YAHFA", "Log.e() should not be here");
-        return 1;
-    }
-
-    public static int copy(String tag, String msg) {
+    public static int backup(String tag, String msg) {
         Log.w("YAHFA", "Log.e() should not be here");
         return 1;
     }

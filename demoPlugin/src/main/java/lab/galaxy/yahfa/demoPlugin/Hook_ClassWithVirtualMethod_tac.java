@@ -14,15 +14,10 @@ public class Hook_ClassWithVirtualMethod_tac {
 
     public static String hook(Object thiz, String a, String b, String c, String d) {
         Log.w("YAHFA", "in ClassWithVirtualMethod.tac(): "+a+", "+b+", "+c+", "+d);
-        return origin(thiz, a, b, c, d);
+        return backup(thiz, a, b, c, d);
     }
 
-    public static String origin(Object thiz, String a, String b, String c, String d) {
-        Log.w("YAHFA", "ClassWithVirtualMethod.tac() should not be here");
-        return "";
-    }
-
-    public static String copy(Object thiz, String a, String b, String c, String d) {
+    public static String backup(Object thiz, String a, String b, String c, String d) {
         Log.w("YAHFA", "ClassWithVirtualMethod.tac() should not be here");
         return "";
     }

@@ -7,12 +7,19 @@
 #include "env.h"
 #include "trampoline.h"
 
-static int SDKVersion;
+int SDKVersion;
 static int OFFSET_entry_point_from_interpreter_in_ArtMethod;
-static int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
-static int OFFSET_hotness_count_in_ArtMethod;
+int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+int OFFSET_hotness_count_in_ArtMethod;
+static int OFFSET_dex_method_index_in_ArtMethod;
+static int OFFSET_dex_cache_resolved_methods_in_ArtMethod;
+static int OFFSET_array_in_PointerArray;
 static int OFFSET_ArtMehod_in_Object;
 static int ArtMethodSize;
+
+static inline uint16_t read16(void *addr) {
+    return *((uint16_t *)addr);
+}
 
 static inline uint32_t read32(void *addr) {
     return *((uint32_t *)addr);
@@ -38,6 +45,10 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
         case ANDROID_N:
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_hotness_count_in_ArtMethod = 4*4+2; // sizeof(GcRoot<mirror::Class>) = 4
+            OFFSET_dex_method_index_in_ArtMethod = 4*3;
+            OFFSET_dex_cache_resolved_methods_in_ArtMethod = roundUpToPtrSize(4*4+2*2);
+            OFFSET_array_in_PointerArray = 0;
+
             // ptr_sized_fields_ is rounded up to pointer_size in ArtMethod
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     roundUpToPtrSize(4*4+2*2) + pointer_size*3;
@@ -49,6 +60,9 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             OFFSET_entry_point_from_interpreter_in_ArtMethod = roundUpToPtrSize(4*7);
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     OFFSET_entry_point_from_interpreter_in_ArtMethod + pointer_size*2;
+            OFFSET_dex_method_index_in_ArtMethod = 4*5;
+            OFFSET_dex_cache_resolved_methods_in_ArtMethod = 4;
+            OFFSET_array_in_PointerArray = 4*3;
             ArtMethodSize = roundUpToPtrSize(4*7)+pointer_size*3;
             break;
         case ANDROID_L2:
@@ -69,10 +83,12 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             LOGE("not compatible with SDK %d", sdkVersion);
             break;
     }
+
+    /*
 #if defined(__i386__)
-    trampoline1[7] = OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+    trampoline1[18] = OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
     if(SDKVersion < ANDROID_N) { // do not set hotness_count before N
-        memset(trampoline2+5, '\x90', 6);
+        memset(trampoline1, '\x90', 11);
     }
 #elif defined(__arm__)
     trampoline1[4] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
@@ -92,9 +108,10 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
         }
     }
 #endif
+     */
 }
 
-static int doBackupAndHook(void *targetMethod, void *hookMethod, void *originMethod, void *copyMethod) {
+static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMethod) {
     if(hookCount >= hookCap) {
         LOGW("not enough capacity. Allocating...");
         if(doInitHookCap(DEFAULT_CAP)) {
@@ -104,41 +121,37 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *originMet
         LOGI("Allocating done");
     }
 
-    LOGI("target method is at %p, hook method is at %p, origin method is at %p, copy method is at %p",
-         targetMethod, hookMethod, originMethod, copyMethod);
+    LOGI("target method is at %p, hook method is at %p, backup method is at %p",
+         targetMethod, hookMethod, backupMethod);
 
-    if(!originMethod || !copyMethod) {
-        LOGW("Origin method or copy method is null. Cannot call origin");
+    if(!backupMethod) {
+        LOGW("Origin method is null. Cannot call origin");
     }
     else { //do method backup
+        //first update the cached method manually
+        void *dexCacheResolvedMethods = (void *) readAddr((void *) ((char *) hookMethod +
+                                                                    OFFSET_dex_cache_resolved_methods_in_ArtMethod));
+        int methodIndex = read32((void *) ((char *) backupMethod + OFFSET_dex_method_index_in_ArtMethod));
+        memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
+               pointer_size * methodIndex,
+               (&backupMethod),
+               pointer_size);
+
         // have to copy the whole target ArtMethod here
         // if the target method calls other methods which are to be resolved
         // then ToDexPC would be invoked for the caller(origin method)
         // in which case ToDexPC would use the entrypoint as a base for mapping pc to dex offset
         // so any changes to the target method's entrypoint would result in a wrong dex offset
         // and artQuickResolutionTrampoline would fail for methods called by the origin method
-
-        memcpy(copyMethod, targetMethod, ArtMethodSize);
-
-        void *realEntryPoint = (void *)readAddr((char *) targetMethod +
-                                        OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod);
-        void *newEntryPoint = genTrampoline2(copyMethod, realEntryPoint);
-        if(newEntryPoint) {
-            memcpy((char *) originMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
-                   &newEntryPoint, pointer_size);
-        }
-        else {
-            LOGE("failed to allocate space for backup method trampoline");
-            return 1;
-        }
+        memcpy(backupMethod, targetMethod, ArtMethodSize);
     }
 
     // replace entry point
-    void *newEntrypoint = genTrampoline1(hookMethod);
-//    LOGI("origin ep is %p, new ep is %p",
-//         readAddr((char *) originMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod),
-//         newEntrypoint
-//    );
+    void *newEntrypoint = genTrampoline1(hookMethod, backupMethod);
+    LOGI("origin ep is %p, new ep is %p",
+         readAddr((char *) targetMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod),
+         newEntrypoint
+    );
     if(newEntrypoint) {
         memcpy((char *) targetMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
                &newEntrypoint,
@@ -162,7 +175,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *originMet
 
 void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass clazz,
     jclass targetClass, jstring methodName, jstring methodSig, jboolean isStatic,
-    jobject hook, jobject origin, jobject copy) {
+    jobject hook, jobject backup) {
     if(!methodName || !methodSig) {
         LOGE("empty method name or signature");
         return;
@@ -195,8 +208,7 @@ void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass cla
     if(!doBackupAndHook(
             targetMethod,
             (void *)(*env)->FromReflectedMethod(env, hook),
-            origin==NULL ? NULL : (void *)(*env)->FromReflectedMethod(env, origin),
-            copy==NULL ? NULL : (void *)(*env)->FromReflectedMethod(env, copy)
+            backup==NULL ? NULL : (void *)(*env)->FromReflectedMethod(env, backup)
     )) {
         (*env)->NewGlobalRef(env, hook); // keep a global ref so that the hook method would not be GCed
     }

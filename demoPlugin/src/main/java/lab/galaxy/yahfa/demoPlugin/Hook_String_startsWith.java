@@ -12,15 +12,10 @@ public class Hook_String_startsWith {
     public static String methodSig = "(Ljava/lang/String;)Z";
     public static boolean hook(String thiz, String prefix) {
         Log.w("YAHFA", "in String.startsWith(): "+thiz+", "+prefix);
-        return origin(thiz, prefix);
+        return backup(thiz, prefix);
     }
 
-    public static boolean origin(String thiz, String prefix) {
-        Log.w("YAHFA", "String.startsWith() should not be here");
-        return false;
-    }
-
-    public static boolean copy(String thiz, String prefix) {
+    public static boolean backup(String thiz, String prefix) {
         Log.w("YAHFA", "String.startsWith() should not be here");
         return false;
     }
