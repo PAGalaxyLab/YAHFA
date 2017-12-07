@@ -17,8 +17,8 @@ To hook a method, please create a `Class` which has the following fields:
 
 The above fields are used for finding target method. Besides, the class should have the following methods:
 
-- A static method named `hook`. This is the hook method that would replace the target method. Please make sure that the arguments do match. For example, if you hook a virtual method, then the first argument of the `hook()` should be _this_ `Object`.
-- A static method named `origin`. This is the placeholder where the target method would be backed up before hooking. You can invoke `origin()` in `hook()` wherever you like. Since `origin()` is a placeholder, how the method is implemented doesn't matter. Also, `origin()` is optional, which means it's not necessary if the original method would not be called.
+- A __static__ method named `hook`. This is the hook method that would replace the target method. Please make sure that the arguments do match. For example, if you hook a virtual method, then the first argument of the `hook()` should be _this_ `Object`.
+- A __static__ method named `backup`. This is the placeholder where the target method would be backed up before hooking. You can invoke `backup()` in `hook()` wherever you like. Since `backup()` is a placeholder, how the method is implemented doesn't matter. Also, `backup()` is optional, which means it's not necessary if the original method would not be called.
 
 Now you have a class which contains all the information for hooking a method. We call this class _hook item_. You can create as many hook items as you like.
 
