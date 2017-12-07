@@ -22,6 +22,8 @@ YAHFA is utilized by [VirtualHook](https://github.com/rk700/VirtualHook) so that
 
 Please take a look at this [article](http://rk700.github.io/2017/03/30/YAHFA-introduction/) and this [one](http://rk700.github.io/2017/06/30/hook-on-android-n/) for a detailed introduction.
 
+[更新说明](https://github.com/rk700/YAHFA/wiki/%E6%9B%B4%E6%96%B0%E8%AF%B4%E6%98%8E)
+
 ## Build
 
 Import and build the project in Android Studio(__with Instant Run disabled__). There are three modules:
