@@ -76,8 +76,8 @@ unsigned char trampoline1[] = {
         0x78, 0x56, 0x34, 0x12,
         0x89, 0x67, 0x45, 0x23
 };
-static unsigned int trampolineSize = roundUpToPtrSize(sizeof(trampoline1));
 #endif
+static unsigned int trampolineSize = roundUpToPtrSize(sizeof(trampoline1));
 
 void *genTrampoline(void *hookMethod, void *backupMethod) {
     void *targetAddr;
