@@ -112,10 +112,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     LOGI("target method is at %p, hook method is at %p, backup method is at %p",
          targetMethod, hookMethod, backupMethod);
 
-    if(!backupMethod) {
-        LOGW("Origin method is null. Cannot call origin");
-    }
-    else { // do method backup
+    if(backupMethod) {// do method backup
         // update the cached method manually
         // first we find the array of cached methods
         void *dexCacheResolvedMethods = (void *) readAddr(
