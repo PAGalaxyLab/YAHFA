@@ -36,6 +36,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
     SDKVersion = sdkVersion;
     LOGI("init to SDK %d", sdkVersion);
     switch(sdkVersion) {
+        case ANDROID_O2:
         case ANDROID_O:
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_access_flags_in_ArtMethod = 4;
@@ -158,7 +159,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     // set the target method to native so that Android O wouldn't invoke it with interpreter
     if(SDKVersion >= ANDROID_O) {
         int access_flags = read32((char *) targetMethod + OFFSET_access_flags_in_ArtMethod);
-        LOGE("access flags is 0x%x", access_flags);
+        LOGI("access flags is 0x%x", access_flags);
         access_flags |= kAccNative;
         memcpy(
                 (char *) targetMethod + OFFSET_access_flags_in_ArtMethod,
