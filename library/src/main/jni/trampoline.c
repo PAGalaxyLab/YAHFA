@@ -128,6 +128,7 @@ void setupTrampoline() {
     trampoline1[24] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 #elif defined(__aarch64__)
     switch (SDKVersion) {
+        case ANDROID_O2:
         case ANDROID_O:
             trampoline1[13] = '\x14'; //10 14 40 f9 ; ldr x16, [x0, #40]
             break;
