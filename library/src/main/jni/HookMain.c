@@ -10,7 +10,6 @@
 int SDKVersion;
 static int OFFSET_entry_point_from_interpreter_in_ArtMethod;
 int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
-int OFFSET_hotness_count_in_ArtMethod;
 static int OFFSET_dex_method_index_in_ArtMethod;
 static int OFFSET_dex_cache_resolved_methods_in_ArtMethod;
 static int OFFSET_array_in_PointerArray;
@@ -41,7 +40,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
         case ANDROID_O:
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_access_flags_in_ArtMethod = 4;
-//            OFFSET_hotness_count_in_ArtMethod = 4*4+2;
             OFFSET_dex_method_index_in_ArtMethod = 4*3;
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = roundUpToPtrSize(4*4+2*2);
             OFFSET_array_in_PointerArray = 0;
@@ -52,8 +50,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
         case ANDROID_N2:
         case ANDROID_N:
             OFFSET_ArtMehod_in_Object = 0;
-            OFFSET_access_flags_in_ArtMethod = 4;
-            //OFFSET_hotness_count_in_ArtMethod = 4*4+2; // sizeof(GcRoot<mirror::Class>) = 4
+            OFFSET_access_flags_in_ArtMethod = 4; // sizeof(GcRoot<mirror::Class>) = 4
             OFFSET_dex_method_index_in_ArtMethod = 4*3;
             OFFSET_dex_cache_resolved_methods_in_ArtMethod = roundUpToPtrSize(4*4+2*2);
             OFFSET_array_in_PointerArray = 0;
