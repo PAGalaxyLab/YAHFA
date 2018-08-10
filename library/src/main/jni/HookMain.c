@@ -36,7 +36,17 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
     SDKVersion = sdkVersion;
     LOGI("init to SDK %d", sdkVersion);
     switch(sdkVersion) {
+        case ANDROID_P:
+            kAccCompileDontBother = 0x02000000;
+            OFFSET_ArtMehod_in_Object = 0;
+            OFFSET_access_flags_in_ArtMethod = 4;
+            //OFFSET_dex_method_index_in_ArtMethod = 4*3;
+            OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
+                    roundUpToPtrSize(4*4+2*2) + pointer_size;
+            ArtMethodSize = roundUpToPtrSize(4*4+2*2) + pointer_size*2;
+            break;
         case ANDROID_O2:
+            kAccCompileDontBother = 0x02000000;
         case ANDROID_O:
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_access_flags_in_ArtMethod = 4;
@@ -132,16 +142,21 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     }
 
     if(backupMethod) {// do method backup
-        // update the cached method manually
-        // first we find the array of cached methods
-        void *dexCacheResolvedMethods = (void *) readAddr(
-                (void *) ((char *) hookMethod + OFFSET_dex_cache_resolved_methods_in_ArtMethod));
-        // then we get the dex method index of the static backup method
-        int methodIndex = read32((void *) ((char *) backupMethod + OFFSET_dex_method_index_in_ArtMethod));
-        // finally the addr of backup method is put at the corresponding location in cached methods array
-        memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray + pointer_size * methodIndex,
-               (&backupMethod),
-               pointer_size);
+        if(SDKVersion < ANDROID_P) {
+            // update the cached method manually
+            // first we find the array of cached methods
+            void *dexCacheResolvedMethods = (void *) readAddr(
+                    (void *) ((char *) hookMethod +
+                              OFFSET_dex_cache_resolved_methods_in_ArtMethod));
+            // then we get the dex method index of the static backup method
+            int methodIndex = read32(
+                    (void *) ((char *) backupMethod + OFFSET_dex_method_index_in_ArtMethod));
+            // finally the addr of backup method is put at the corresponding location in cached methods array
+            memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
+                   pointer_size * methodIndex,
+                   (&backupMethod),
+                   pointer_size);
+        }
 
         // have to copy the whole target ArtMethod here
         // if the target method calls other methods which are to be resolved
@@ -177,13 +192,13 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     // set the target method to native so that Android O wouldn't invoke it with interpreter
     if(SDKVersion >= ANDROID_O) {
         int access_flags = read32((char *) targetMethod + OFFSET_access_flags_in_ArtMethod);
-        LOGI("access flags is 0x%x", access_flags);
         access_flags |= kAccNative;
         memcpy(
                 (char *) targetMethod + OFFSET_access_flags_in_ArtMethod,
                 &access_flags,
                 4
         );
+        LOGI("access flags is 0x%x", access_flags);
     }
 
     LOGI("hook and backup done");

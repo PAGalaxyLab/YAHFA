@@ -22,18 +22,24 @@ public class MainActivity extends Activity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Log.e() should be hooked
-                Log.e("origin", "call Log.e()");
-                // String.startsWith() should be hooked
-                Log.w("origin", "foo startsWith f is "+"foo".startsWith("f"));
-                // ClassWithVirtualMethod.tac() should be hooked
-                Log.w("origin", "virtual tac a,b,c,d, got "+
-                        new ClassWithVirtualMethod().tac("a","b","c","d"));
-                // ClassWithStaticMethod.tac() should be hooked
-                Log.w("origin", "static tac a,b,c,d, got "+
-                        ClassWithStaticMethod.tac("a","b","c","d"));
-                Log.w("origin", "JNI method return string: "+ClassWithJNIMethod.fromJNI());
+                for(int i=0; i<200; i++) {
+                    doWork();
+                }
             }
         });
+    }
+
+    void doWork() {
+        // Log.e() should be hooked
+        Log.e("origin", "call Log.e()");
+        // String.startsWith() should be hooked
+        Log.w("origin", "foo startsWith f is "+"foo".startsWith("f"));
+        // ClassWithVirtualMethod.tac() should be hooked
+        Log.w("origin", "virtual tac a,b,c,d, got "+
+                new ClassWithVirtualMethod().tac("a","b","c","d"));
+        // ClassWithStaticMethod.tac() should be hooked
+        Log.w("origin", "static tac a,b,c,d, got "+
+                ClassWithStaticMethod.tac("a","b","c","d"));
+        Log.w("origin", "JNI method return string: "+ClassWithJNIMethod.fromJNI());
     }
 }
