@@ -6,6 +6,7 @@ import android.util.Log;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -76,78 +77,78 @@ public class HookMain {
         }
     }
 
+    public static void findAndHook(Class targetClass, String methodName, String methodSig, Method hook) {
+        hook(findMethod(targetClass, methodName, methodSig), hook);
+    }
 
     public static void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
                                      Method hook, Method backup) {
-        try {
-            int hookParamCount = hook.getParameterTypes().length;
-            int targetParamCount = getParamCountFromSignature(methodSig);
-            Log.d(TAG, "target method param count is "+targetParamCount);
-            boolean isStatic = (hookParamCount == targetParamCount);
-            // virtual method has 'thiz' object as the first parameter
-            findAndBackupAndHook(targetClass, methodName, methodSig, isStatic, hook, backup);
+        backupAndHook(findMethod(targetClass, methodName, methodSig), hook, backup);
+    }
+
+    public static void hook(Method target, Method hook) {
+        backupAndHook(target, hook, null);
+    }
+
+    public static void backupAndHook(Method target, Method hook, Method backup) {
+        if (target == null) {
+            throw new IllegalArgumentException("null target method");
         }
-        catch (Exception e) {
-            e.printStackTrace();
+        if (hook == null) {
+            throw new IllegalArgumentException("null hook method");
+        }
+
+        checkCompatibleMethods(target, hook);
+        if (backup != null) {
+            checkCompatibleMethods(backup, target);
+        }
+        if (!backupAndHookNative(target, hook, backup)) {
+            throw new RuntimeException("Failed to hook " + target + " with " + hook);
         }
     }
 
-    private static int getParamCountFromSignature(String signature) throws Exception{
-        int index;
-        int count = 0;
-        int seg;
-        try { // Read all declarations between for `(' and `)'
-            if (signature.charAt(0) != '(') {
-                throw new Exception("Invalid method signature: " + signature);
+    private static Method findMethod(Class cls, String methodName, String methodSig) {
+        if (cls == null) {
+            throw new IllegalArgumentException("null class");
+        }
+        if (methodName == null) {
+            throw new IllegalArgumentException("null method name");
+        }
+        if (methodSig == null) {
+            throw new IllegalArgumentException("null method signature");
+        }
+        return findMethodNative(cls, methodName, methodSig);
+    }
+
+    private static void checkCompatibleMethods(Method original, Method replacement) {
+        ArrayList<Class<?>> originalParams = new ArrayList<>(Arrays.asList(original.getParameterTypes()));
+        ArrayList<Class<?>> replacementParams = new ArrayList<>(Arrays.asList(replacement.getParameterTypes()));
+
+        if (!Modifier.isStatic(original.getModifiers())) {
+            originalParams.add(0, original.getDeclaringClass());
+        }
+        if (!Modifier.isStatic(replacement.getModifiers())) {
+            throw new IllegalArgumentException("replacement must be a static method: " + replacement);
+        }
+
+        if (!original.getReturnType().isAssignableFrom(replacement.getReturnType())) {
+            throw new IllegalArgumentException("Replacement has incompatible return type. Expected " + original.getReturnType() + ", got " + replacement.getReturnType());
+        }
+
+        if (originalParams.size() != replacementParams.size()) {
+            throw new IllegalArgumentException("Replacement arguments don't match. Expected " + originalParams.size() + ", got " + replacementParams.size());
+        }
+
+        for (int i=0; i<originalParams.size(); i++) {
+            if (!replacementParams.get(i).isAssignableFrom(originalParams.get(i))) {
+                throw new IllegalArgumentException("Replacement has incompatible argument #" + i + ": Expected " + originalParams.get(i) + ", got " + replacementParams.get(i));
             }
-            index = 1; // current string position
-            while(signature.charAt(index) != ')') {
-                seg = parseSignature(signature.substring(index));
-                index += seg;
-                count++;
-            }
-
-        } catch (final StringIndexOutOfBoundsException e) { // Should never occur
-            throw new Exception("Invalid method signature: " + signature, e);
         }
-        return count;
     }
 
-    private static int parseSignature(String signature) throws Exception {
-        int count = 0;
-        switch (signature.charAt(0)) {
-            case 'B': // byte
-            case 'C': // char
-            case 'D': // double
-            case 'F': // float
-            case 'I': // int
-            case 'J': // long
-            case 'S': // short
-            case 'Z': // boolean
-            case 'V': // void
-                count++;
-                break;
-            case 'L': // class
-                count++; // char L
-                while(signature.charAt(count) != ';') {
-                    count++;
-                }
-                count++; // char ;
-                break;
-            case '[': // array
-                count++; // char [
-                count += parseSignature(signature.substring(count));
-                break;
-            default:
-                throw new Exception("Invalid type: " + signature);
-        }
-        return count;
-    }
+    private static native boolean backupAndHookNative(Method target, Method hook, Method backup);
 
-
-    private static native void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
-                                            boolean isStatic,
-                                            Method hook, Method backup);
+    public static native Method findMethodNative(Class targetClass, String methodName, String methodSig);
 
     private static native void init(int SDK_version);
 }

@@ -206,46 +206,41 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     return 0;
 }
 
-void Java_lab_galaxy_yahfa_HookMain_findAndBackupAndHook(JNIEnv *env, jclass clazz,
-    jclass targetClass, jstring methodName, jstring methodSig, jboolean isStatic,
-    jobject hook, jobject backup) {
-    if(!methodName || !methodSig) {
-        LOGE("empty method name or signature");
-        return;
-    }
+jobject Java_lab_galaxy_yahfa_HookMain_findMethodNative(JNIEnv *env, jclass clazz,
+                                                   jclass targetClass, jstring methodName, jstring methodSig) {
     const char *c_methodName = (*env)->GetStringUTFChars(env, methodName, NULL);
     const char *c_methodSig = (*env)->GetStringUTFChars(env, methodSig, NULL);
-    if(c_methodName == NULL || c_methodSig == NULL) {
-        LOGE("failed to get c string");
-        return;
-    }
-    void *targetMethod = NULL;
-    LOGI("Start findAndBackupAndHook for %s method %s%s", isStatic ? "static" : "non-static", c_methodName, c_methodSig);
-    if(ArtMethodSize == 0) {
-        LOGE("Not initialized");
-        goto end;
-    }
-    if(!isStatic) { // non-static
-        targetMethod = (void *) (*env)->GetMethodID(env, targetClass, c_methodName, c_methodSig);
-    }
-    else {// static
-        targetMethod = (void *)(*env)->GetStaticMethodID(env, targetClass, c_methodName, c_methodSig);
+    jobject ret = NULL;
+
+
+    //Try both GetMethodID and GetStaticMethodID -- Whatever works :)
+    jmethodID method = (*env)->GetMethodID(env, targetClass, c_methodName, c_methodSig);
+    if(!(*env)->ExceptionCheck(env)) {
+        ret = (*env)->ToReflectedMethod(env, targetClass, method, JNI_FALSE);
+    } else {
+        (*env)->ExceptionClear(env);
+        jmethodID method = (*env)->GetStaticMethodID(env, targetClass, c_methodName, c_methodSig);
+        if(!(*env)->ExceptionCheck(env)) {
+            ret = (*env)->ToReflectedMethod(env, targetClass, method, JNI_TRUE);
+        }
     }
 
-    if((*env)->ExceptionCheck(env)) {
-        (*env)->ExceptionClear(env);
-        LOGE("Cannot find target %s method: %s%s", isStatic ? "static" : "non-static", c_methodName, c_methodSig);
-        goto end;
-    }
+    (*env)->ReleaseStringUTFChars(env, methodName, c_methodName);
+    (*env)->ReleaseStringUTFChars(env, methodSig, c_methodSig);
+    return ret;
+}
+
+jboolean Java_lab_galaxy_yahfa_HookMain_backupAndHookNative(JNIEnv *env, jclass clazz,
+                                                  jobject target, jobject hook, jobject backup) {
 
     if(!doBackupAndHook(
-            targetMethod,
+            (void *)(*env)->FromReflectedMethod(env, target),
             (void *)(*env)->FromReflectedMethod(env, hook),
             backup==NULL ? NULL : (void *)(*env)->FromReflectedMethod(env, backup)
     )) {
         (*env)->NewGlobalRef(env, hook); // keep a global ref so that the hook method would not be GCed
+        return JNI_TRUE;
+    } else {
+        return JNI_FALSE;
     }
-end:
-    (*env)->ReleaseStringUTFChars(env, methodName, c_methodName);
-    (*env)->ReleaseStringUTFChars(env, methodSig, c_methodSig);
 }
