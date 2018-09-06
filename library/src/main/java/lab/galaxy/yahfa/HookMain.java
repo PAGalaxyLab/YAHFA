@@ -98,9 +98,15 @@ public class HookMain {
             throw new IllegalArgumentException("null hook method");
         }
 
-        checkCompatibleMethods(target, hook);
+        if (!Modifier.isStatic(hook.getModifiers())) {
+            throw new IllegalArgumentException("Hook must be a static method: " + hook);
+        }
+        checkCompatibleMethods(target, hook, "Original", "Hook");
         if (backup != null) {
-            checkCompatibleMethods(target, backup);
+            if (!Modifier.isStatic(backup.getModifiers())) {
+                throw new IllegalArgumentException("Backup must be a static method: " + hook);
+            }
+            checkCompatibleMethods(backup, target, "Backup", "Original");
         }
         if (!backupAndHookNative(target, hook, backup)) {
             throw new RuntimeException("Failed to hook " + target + " with " + hook);
@@ -120,7 +126,7 @@ public class HookMain {
         return findMethodNative(cls, methodName, methodSig);
     }
 
-    private static void checkCompatibleMethods(Method original, Method replacement) {
+    private static void checkCompatibleMethods(Method original, Method replacement, String originalName, String replacementName) {
         ArrayList<Class<?>> originalParams = new ArrayList<>(Arrays.asList(original.getParameterTypes()));
         ArrayList<Class<?>> replacementParams = new ArrayList<>(Arrays.asList(replacement.getParameterTypes()));
 
@@ -128,20 +134,20 @@ public class HookMain {
             originalParams.add(0, original.getDeclaringClass());
         }
         if (!Modifier.isStatic(replacement.getModifiers())) {
-            throw new IllegalArgumentException("replacement must be a static method: " + replacement);
+            replacementParams.add(0, replacement.getDeclaringClass());
         }
 
         if (!original.getReturnType().isAssignableFrom(replacement.getReturnType())) {
-            throw new IllegalArgumentException("Replacement has incompatible return type. Expected " + original.getReturnType() + ", got " + replacement.getReturnType());
+            throw new IllegalArgumentException("Incompatible return types. " + originalName + ": " + original.getReturnType() + ", " + replacementName + ": " + replacement.getReturnType());
         }
 
         if (originalParams.size() != replacementParams.size()) {
-            throw new IllegalArgumentException("Replacement arguments don't match. Expected " + originalParams.size() + ", got " + replacementParams.size());
+            throw new IllegalArgumentException("Number of arguments don't match. " + originalName + ": " + originalParams.size() + ", " + replacementName + ": " + replacementParams.size());
         }
 
         for (int i=0; i<originalParams.size(); i++) {
             if (!replacementParams.get(i).isAssignableFrom(originalParams.get(i))) {
-                throw new IllegalArgumentException("Replacement has incompatible argument #" + i + ": Expected " + originalParams.get(i) + ", got " + replacementParams.get(i));
+                throw new IllegalArgumentException("Incompatible argument #" + i + ": " + originalName + ": " + originalParams.get(i) + ", " + replacementName + ": " + replacementParams.get(i));
             }
         }
     }
