@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '27.0.1'
+    buildToolsVersion '28.0.2'
     defaultConfig {
         applicationId "lab.galaxy.yahfa.demoApp"
         minSdkVersion 21

@@ -5,7 +5,7 @@ package lab.galaxy.yahfa.demoApp;
  */
 
 public class ClassWithVirtualMethod {
-    public String tac(String a, String b, String c, String d) {
+    final public String tac(String a, String b, String c, String d) {
         try {
             return d + c + b + a;
         }

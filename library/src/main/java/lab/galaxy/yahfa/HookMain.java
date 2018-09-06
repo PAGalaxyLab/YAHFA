@@ -100,7 +100,7 @@ public class HookMain {
 
         checkCompatibleMethods(target, hook);
         if (backup != null) {
-            checkCompatibleMethods(backup, target);
+            checkCompatibleMethods(target, backup);
         }
         if (!backupAndHookNative(target, hook, backup)) {
             throw new RuntimeException("Failed to hook " + target + " with " + hook);

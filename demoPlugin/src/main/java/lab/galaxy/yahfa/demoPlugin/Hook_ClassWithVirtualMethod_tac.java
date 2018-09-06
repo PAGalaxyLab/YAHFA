@@ -13,7 +13,8 @@ public class Hook_ClassWithVirtualMethod_tac {
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
 
     public static String hook(Object thiz, String a, String b, String c, String d) {
-        Log.w("YAHFA", "in ClassWithVirtualMethod.tac(): "+a+", "+b+", "+c+", "+d);
+        int uid = android.os.Process.myUid();
+        Log.w("YAHFA", "in ClassWithVirtualMethod.tac(): "+a+", "+b+", "+c+", "+d+": "+uid);
         return backup(thiz, a, b, c, d);
     }
 
