@@ -39,13 +39,13 @@ unsigned char trampoline[] = {
 
 #elif defined(__aarch64__)
 // 60 00 00 58 ; ldr x0, 12
-// 10 18 40 f9 ; ldr x16, [x0, #48]
+// 10 00 40 F8 ; ldr x16, [x0, #0x00]
 // 00 02 1f d6 ; br x16
 // 78 56 34 12
 // 89 67 45 23 ; 0x2345678912345678 (addr of the hook method)
 unsigned char trampoline[] = {
         0x60, 0x00, 0x00, 0x58,
-        0x10, 0x18, 0x40, 0xf9,
+        0x10, 0x00, 0x40, 0xf8,
         0x00, 0x02, 0x1f, 0xd6,
         0x78, 0x56, 0x34, 0x12,
         0x89, 0x67, 0x45, 0x23
@@ -79,27 +79,8 @@ void setupTrampoline() {
 #elif defined(__arm__)
     trampoline[4] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 #elif defined(__aarch64__)
-    switch (SDKVersion) {
-        case ANDROID_O2:
-        case ANDROID_O:
-            trampoline[5] = '\x14'; //10 14 40 f9 ; ldr x16, [x0, #40]
-            break;
-        case ANDROID_N2:
-        case ANDROID_N:
-            trampoline[5] = '\x18'; //10 18 40 f9 ; ldr x16, [x0, #48]
-            break;
-        case ANDROID_M:
-            trampoline[5] = '\x18'; //10 18 40 f9 ; ldr x16, [x0, #48]
-            break;
-        case ANDROID_L2:
-            trampoline[5] = '\x1c'; //10 1c 40 f9 ; ldr x16, [x0, #56]
-            break;
-        case ANDROID_L:
-            trampoline[5] = '\x1c'; //10 14 40 f9 ; ldr x16, [x0, #40]
-            break;
-        default:
-            break;
-    }
+    trampoline[5] |= ((unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) << 4;
+    trampoline[6] |= ((unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) >> 4;
 #endif
 }
 
