@@ -19,12 +19,22 @@ unsigned int hookCount = 0;
 // 2. jump into its entry point
 #if defined(__i386__)
 // b8 78 56 34 12 ; mov eax, 0x12345678 (addr of the hook method)
-// ff 70 20 ; push dword [eax + 0x20]
+// ff 70 20 ; push DWORD PTR [eax + 0x20]
 // c3 ; ret
 unsigned char trampoline[] = {
         0xb8, 0x78, 0x56, 0x34, 0x12,
         0xff, 0x70, 0x20,
         0xc3
+};
+
+#elif defined(__x86_64__)
+// 48 bf 78 56 34 12 78 56 34 12 ; movabs rdi, 0x1234567812345678
+// ff 77 20 ; push QWORD PTR [rdi + 0x20]
+// c3 ; ret
+unsigned char trampoline[] = {
+    0x48, 0xbf, 0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12,
+    0xff, 0x77, 0x20,
+    0xc3
 };
 
 #elif defined(__arm__)
@@ -63,6 +73,9 @@ void *genTrampoline(void *hookMethod, void *backupMethod) {
 #if defined(__i386__)
     memcpy(targetAddr+1, &hookMethod, pointer_size);
 
+#elif defined(__x86_64__)
+    memcpy((char*)targetAddr + 2, &hookMethod, pointer_size);
+
 #elif defined(__arm__)
     memcpy(targetAddr+8, &hookMethod, pointer_size);
 
@@ -76,6 +89,8 @@ void *genTrampoline(void *hookMethod, void *backupMethod) {
 void setupTrampoline() {
 #if defined(__i386__)
     trampoline[7] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+#elif defined(__x86_64__)
+    trampoline[12] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 #elif defined(__arm__)
     trampoline[4] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 #elif defined(__aarch64__)
