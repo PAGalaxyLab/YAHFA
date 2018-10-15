@@ -142,7 +142,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     }
 
     if(backupMethod) {// do method backup
-        if(SDKVersion < ANDROID_P) {
+        if(SDKVersion < ANDROID_O2) {
             // update the cached method manually
             // first we find the array of cached methods
             void *dexCacheResolvedMethods = (void *) readAddr(
