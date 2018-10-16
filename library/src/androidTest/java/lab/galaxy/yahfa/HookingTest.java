@@ -1,6 +1,8 @@
 package lab.galaxy.yahfa;
 
+import android.os.Build;
 import android.support.test.runner.AndroidJUnit4;
+import android.util.Log;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -53,6 +55,7 @@ public class HookingTest {
 
     @Before
     public void setup() {
+        Log.i(TAG, "ABI=" + Build.CPU_ABI);
         StaticHook.targetCount = 0;
         StaticHook.hookCount = 0;
         StaticHook.backupCount = 0;
