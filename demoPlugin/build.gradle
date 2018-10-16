@@ -12,8 +12,6 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
     }
-    productFlavors {
-    }
 }
 
 dependencies {
