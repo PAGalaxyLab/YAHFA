@@ -21,7 +21,7 @@
 #define pointer_size 4
 #define readAddr(addr) read32(addr)
 #define roundUpToPtrSize(x) roundUpTo4(x)
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) || defined(__x86_64__)
 #define pointer_size 8
 #define readAddr(addr) read64(addr)
 #define roundUpToPtrSize(x) roundUpTo8(x)
