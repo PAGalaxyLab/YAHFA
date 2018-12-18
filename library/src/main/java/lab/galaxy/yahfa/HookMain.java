@@ -106,7 +106,8 @@ public class HookMain {
             if (!Modifier.isStatic(backup.getModifiers())) {
                 throw new IllegalArgumentException("Backup must be a static method: " + hook);
             }
-            checkCompatibleMethods(backup, target, "Backup", "Original");
+            // backup is just a placeholder and the constraint could be less strict
+            checkCompatibleMethods(target, backup, "Original", "Backup");
         }
         if (!backupAndHookNative(target, hook, backup)) {
             throw new RuntimeException("Failed to hook " + target + " with " + hook);
