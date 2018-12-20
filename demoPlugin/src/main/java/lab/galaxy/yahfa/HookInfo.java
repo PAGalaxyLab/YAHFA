@@ -10,6 +10,7 @@ public class HookInfo {
             "lab.galaxy.yahfa.demoPlugin.Hook_String_startsWith",
             "lab.galaxy.yahfa.demoPlugin.Hook_ClassWithVirtualMethod_tac",
             "lab.galaxy.yahfa.demoPlugin.Hook_ClassWithStaticMethod_tac",
-            "lab.galaxy.yahfa.demoPlugin.Hook_ClassWithJNIMethod_fromJNI"
+            "lab.galaxy.yahfa.demoPlugin.Hook_ClassWithJNIMethod_fromJNI",
+            "lab.galaxy.yahfa.demoPlugin.Hook_ClassWithCtor"
     };
 }

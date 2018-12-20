@@ -15,6 +15,25 @@ import java.lang.reflect.Method;
 public class HookingTest {
     private static final String TAG = HookingTest.class.getSimpleName();
 
+    static class CtorHook {
+        static int targetCount = 0;
+        static int hookCount = 0;
+        static int backupCount = 0;
+
+        public CtorHook(int arg) {
+            targetCount++;
+        }
+
+        public static void hook(CtorHook thiz, int arg) {
+            hookCount++;
+            backup(thiz, arg);
+        }
+        public static void backup(CtorHook thiz, int arg) {
+            backupCount++;
+            throw new UnsupportedOperationException("Stub!");
+        }
+    }
+
     static class StaticHook {
         static int targetCount = 0;
         static int hookCount = 0;
@@ -63,6 +82,10 @@ public class HookingTest {
         InstanceHook.targetCount = 0;
         InstanceHook.hookCount = 0;
         InstanceHook.backupCount = 0;
+
+        CtorHook.targetCount = 0;
+        CtorHook.hookCount = 0;
+        CtorHook.backupCount = 0;
     }
 
     @Test
@@ -145,5 +168,46 @@ public class HookingTest {
         Assert.assertEquals(4, StaticHook.targetCount);
         Assert.assertEquals(3, StaticHook.hookCount);
         Assert.assertEquals(1, StaticHook.backupCount);
+    }
+
+    @Test
+    public void hookCtorMethod() throws Exception {
+        CtorHook ctorHook = new CtorHook(0);
+        Assert.assertEquals(1, CtorHook.targetCount);
+        Assert.assertEquals(0, CtorHook.hookCount);
+        Assert.assertEquals(0, CtorHook.backupCount);
+
+        try {
+            CtorHook.hook(ctorHook,4);
+            Assert.fail("Backup should have failed");
+        } catch (UnsupportedOperationException e) {
+            //Ok
+        }
+        Assert.assertEquals(1, CtorHook.targetCount);
+        Assert.assertEquals(1, CtorHook.hookCount);
+        Assert.assertEquals(1, CtorHook.backupCount);
+
+
+        //------------------------ AFTER HOOKING --------------------------------
+        HookMain.backupAndHook(
+                CtorHook.class.getConstructor(int.class),
+                CtorHook.class.getMethod("hook", CtorHook.class, int.class),
+                CtorHook.class.getMethod("backup", CtorHook.class, int.class));
+
+        ctorHook = new CtorHook(0);
+
+        Assert.assertEquals(2, CtorHook.targetCount);
+        Assert.assertEquals(2, CtorHook.hookCount);
+        Assert.assertEquals(1, CtorHook.backupCount);
+
+        ctorHook = new CtorHook(0);
+        Assert.assertEquals(3, CtorHook.targetCount);
+        Assert.assertEquals(3, CtorHook.hookCount);
+        Assert.assertEquals(1, CtorHook.backupCount);
+
+        CtorHook.backup(ctorHook, 0);
+        Assert.assertEquals(4, CtorHook.targetCount);
+        Assert.assertEquals(3, CtorHook.hookCount);
+        Assert.assertEquals(1, CtorHook.backupCount);
     }
 }

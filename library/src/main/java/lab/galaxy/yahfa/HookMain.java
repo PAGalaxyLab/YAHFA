@@ -3,6 +3,7 @@ package lab.galaxy.yahfa;
 import android.app.Application;
 import android.util.Log;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -86,11 +87,11 @@ public class HookMain {
         backupAndHook(findMethod(targetClass, methodName, methodSig), hook, backup);
     }
 
-    public static void hook(Method target, Method hook) {
+    public static void hook(Object target, Method hook) {
         backupAndHook(target, hook, null);
     }
 
-    public static void backupAndHook(Method target, Method hook, Method backup) {
+    public static void backupAndHook(Object target, Method hook, Method backup) {
         if (target == null) {
             throw new IllegalArgumentException("null target method");
         }
@@ -114,7 +115,7 @@ public class HookMain {
         }
     }
 
-    private static Method findMethod(Class cls, String methodName, String methodSig) {
+    private static Object findMethod(Class cls, String methodName, String methodSig) {
         if (cls == null) {
             throw new IllegalArgumentException("null class");
         }
@@ -127,19 +128,41 @@ public class HookMain {
         return findMethodNative(cls, methodName, methodSig);
     }
 
-    private static void checkCompatibleMethods(Method original, Method replacement, String originalName, String replacementName) {
-        ArrayList<Class<?>> originalParams = new ArrayList<>(Arrays.asList(original.getParameterTypes()));
+    private static void checkCompatibleMethods(Object original, Method replacement, String originalName, String replacementName) {
+        ArrayList<Class<?>> originalParams;
+        if(original instanceof Method) {
+            originalParams = new ArrayList<>(Arrays.asList(((Method)original).getParameterTypes()));
+        }
+        else if (original instanceof Constructor){
+            originalParams = new ArrayList<>(Arrays.asList(((Constructor<?>)original).getParameterTypes()));
+        }
+        else {
+            throw new IllegalArgumentException("Type of target method is wrong");
+        }
+
         ArrayList<Class<?>> replacementParams = new ArrayList<>(Arrays.asList(replacement.getParameterTypes()));
 
-        if (!Modifier.isStatic(original.getModifiers())) {
-            originalParams.add(0, original.getDeclaringClass());
+        if (original instanceof Method
+            && !Modifier.isStatic(((Method)original).getModifiers())) {
+            originalParams.add(0, ((Method)original).getDeclaringClass());
         }
+        else if (original instanceof Constructor) {
+            originalParams.add(0, ((Constructor<?>)original).getDeclaringClass());
+        }
+
+
         if (!Modifier.isStatic(replacement.getModifiers())) {
             replacementParams.add(0, replacement.getDeclaringClass());
         }
 
-        if (!original.getReturnType().isAssignableFrom(replacement.getReturnType())) {
-            throw new IllegalArgumentException("Incompatible return types. " + originalName + ": " + original.getReturnType() + ", " + replacementName + ": " + replacement.getReturnType());
+        if (original instanceof Method
+            && !((Method)original).getReturnType().isAssignableFrom(replacement.getReturnType())) {
+            throw new IllegalArgumentException("Incompatible return types. " + originalName + ": " + ((Method)original).getReturnType() + ", " + replacementName + ": " + replacement.getReturnType());
+        }
+        else if (original instanceof Constructor) {
+            if(replacement.getReturnType().equals(Void.class)) {
+                throw new IllegalArgumentException("Incompatible return types. " + "<init>" + ": " + "V" + ", " + replacementName + ": " + replacement.getReturnType());
+            }
         }
 
         if (originalParams.size() != replacementParams.size()) {
@@ -153,9 +176,10 @@ public class HookMain {
         }
     }
 
-    private static native boolean backupAndHookNative(Method target, Method hook, Method backup);
+    private static native boolean backupAndHookNative(Object target, Method hook, Method backup);
 
-    public static native Method findMethodNative(Class targetClass, String methodName, String methodSig);
+    // JNI.ToReflectedMethod() could return either Method or Constructor
+    public static native Object findMethodNative(Class targetClass, String methodName, String methodSig);
 
     private static native void init(int SDK_version);
 }
