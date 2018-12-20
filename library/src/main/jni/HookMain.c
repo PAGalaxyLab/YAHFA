@@ -15,7 +15,7 @@ static int OFFSET_dex_cache_resolved_methods_in_ArtMethod;
 static int OFFSET_array_in_PointerArray;
 static int OFFSET_ArtMehod_in_Object;
 static int OFFSET_access_flags_in_ArtMethod;
-static int ArtMethodSize;
+static size_t ArtMethodSize;
 static int kAccNative = 0x0100;
 static int kAccCompileDontBother = 0x01000000;
 
@@ -142,20 +142,41 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     }
 
     if(backupMethod) {// do method backup
-        if(SDKVersion < ANDROID_O2) {
+        if(SDKVersion <= ANDROID_O2) {
             // update the cached method manually
             // first we find the array of cached methods
             void *dexCacheResolvedMethods = (void *) readAddr(
                     (void *) ((char *) hookMethod +
                               OFFSET_dex_cache_resolved_methods_in_ArtMethod));
+
             // then we get the dex method index of the static backup method
             int methodIndex = read32(
                     (void *) ((char *) backupMethod + OFFSET_dex_method_index_in_ArtMethod));
+
             // finally the addr of backup method is put at the corresponding location in cached methods array
-            memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
-                   pointer_size * methodIndex,
-                   (&backupMethod),
-                   pointer_size);
+            if(SDKVersion == ANDROID_O2) {
+                // array of MethodDexCacheType is used as dexCacheResolvedMethods in Android 8.1
+                // struct:
+                // struct NativeDexCachePair<T> = { T*, size_t idx }
+                // MethodDexCachePair = NativeDexCachePair<ArtMethod> = { ArtMethod*, size_t idx }
+                // MethodDexCacheType = std::atomic<MethodDexCachePair>
+                memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
+                       pointer_size * 2 * methodIndex,
+                       (&backupMethod),
+                       pointer_size
+                );
+                memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
+                       pointer_size * 2 * methodIndex + pointer_size,
+                       &methodIndex,
+                       pointer_size
+                );
+            }
+            else {
+                memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
+                       pointer_size * methodIndex,
+                       (&backupMethod),
+                       pointer_size);
+            }
         }
 
         // have to copy the whole target ArtMethod here
@@ -168,7 +189,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     }
 
     // replace entry point
-    void *newEntrypoint = genTrampoline(hookMethod, backupMethod);
+    void *newEntrypoint = genTrampoline(hookMethod);
     LOGI("origin ep is %p, new ep is %p",
          readAddr((char *) targetMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod),
          newEntrypoint
@@ -179,7 +200,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
                pointer_size);
     }
     else {
-        LOGW("failed to allocate space for trampoline");
+        LOGW("failed to allocate space for trampoline of target method");
         return 1;
     }
 
@@ -219,7 +240,7 @@ jobject Java_lab_galaxy_yahfa_HookMain_findMethodNative(JNIEnv *env, jclass claz
         ret = (*env)->ToReflectedMethod(env, targetClass, method, JNI_FALSE);
     } else {
         (*env)->ExceptionClear(env);
-        jmethodID method = (*env)->GetStaticMethodID(env, targetClass, c_methodName, c_methodSig);
+        method = (*env)->GetStaticMethodID(env, targetClass, c_methodName, c_methodSig);
         if(!(*env)->ExceptionCheck(env)) {
             ret = (*env)->ToReflectedMethod(env, targetClass, method, JNI_TRUE);
         }
