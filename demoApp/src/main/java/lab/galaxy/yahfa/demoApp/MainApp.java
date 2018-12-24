@@ -24,8 +24,7 @@ public class MainApp extends Application {
             DexClassLoader dexClassLoader = new DexClassLoader("/sdcard/demoPlugin-debug.apk",
                     getCodeCacheDir().getAbsolutePath(), null, classLoader);
             HookMain.doHookDefault(dexClassLoader, classLoader);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

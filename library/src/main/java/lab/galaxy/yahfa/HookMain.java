@@ -1,6 +1,5 @@
 package lab.galaxy.yahfa;
 
-import android.app.Application;
 import android.util.Log;
 
 import java.lang.reflect.Constructor;
@@ -10,8 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-
-import dalvik.system.DexClassLoader;
 
 /**
  * Created by liuruikai756 on 28/03/2017.
@@ -29,33 +26,32 @@ public class HookMain {
     public static void doHookDefault(ClassLoader patchClassLoader, ClassLoader originClassLoader) {
         try {
             Class<?> hookInfoClass = Class.forName("lab.galaxy.yahfa.HookInfo", true, patchClassLoader);
-            String[] hookItemNames = (String[])hookInfoClass.getField("hookItemNames").get(null);
-            for(String hookItemName : hookItemNames) {
+            String[] hookItemNames = (String[]) hookInfoClass.getField("hookItemNames").get(null);
+            for (String hookItemName : hookItemNames) {
                 doHookItemDefault(patchClassLoader, hookItemName, originClassLoader);
             }
             hookInfoClasses.add(hookInfoClass);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private static void doHookItemDefault(ClassLoader patchClassLoader, String hookItemName, ClassLoader originClassLoader) {
         try {
-            Log.i(TAG, "Start hooking with item "+hookItemName);
+            Log.i(TAG, "Start hooking with item " + hookItemName);
             Class<?> hookItem = Class.forName(hookItemName, true, patchClassLoader);
 
-            String className = (String)hookItem.getField("className").get(null);
-            String methodName = (String)hookItem.getField("methodName").get(null);
-            String methodSig = (String)hookItem.getField("methodSig").get(null);
+            String className = (String) hookItem.getField("className").get(null);
+            String methodName = (String) hookItem.getField("methodName").get(null);
+            String methodSig = (String) hookItem.getField("methodSig").get(null);
 
-            if(className == null || className.equals("")) {
+            if (className == null || className.equals("")) {
                 Log.w(TAG, "No target class. Skipping...");
                 return;
             }
             Class<?> clazz = Class.forName(className, true, originClassLoader);
-            if(Modifier.isAbstract(clazz.getModifiers())) {
-                Log.w(TAG, "Hook may fail for abstract class: "+className);
+            if (Modifier.isAbstract(clazz.getModifiers())) {
+                Log.w(TAG, "Hook may fail for abstract class: " + className);
             }
 
             Method hook = null;
@@ -68,12 +64,11 @@ public class HookMain {
                 }
             }
             if (hook == null) {
-                Log.e(TAG, "Cannot find hook for "+methodName);
+                Log.e(TAG, "Cannot find hook for " + methodName);
                 return;
             }
             findAndBackupAndHook(clazz, methodName, methodSig, hook, backup);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -83,7 +78,7 @@ public class HookMain {
     }
 
     public static void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
-                                     Method hook, Method backup) {
+                                            Method hook, Method backup) {
         backupAndHook(findMethod(targetClass, methodName, methodSig), hook, backup);
     }
 
@@ -130,24 +125,21 @@ public class HookMain {
 
     private static void checkCompatibleMethods(Object original, Method replacement, String originalName, String replacementName) {
         ArrayList<Class<?>> originalParams;
-        if(original instanceof Method) {
-            originalParams = new ArrayList<>(Arrays.asList(((Method)original).getParameterTypes()));
-        }
-        else if (original instanceof Constructor){
-            originalParams = new ArrayList<>(Arrays.asList(((Constructor<?>)original).getParameterTypes()));
-        }
-        else {
+        if (original instanceof Method) {
+            originalParams = new ArrayList<>(Arrays.asList(((Method) original).getParameterTypes()));
+        } else if (original instanceof Constructor) {
+            originalParams = new ArrayList<>(Arrays.asList(((Constructor<?>) original).getParameterTypes()));
+        } else {
             throw new IllegalArgumentException("Type of target method is wrong");
         }
 
         ArrayList<Class<?>> replacementParams = new ArrayList<>(Arrays.asList(replacement.getParameterTypes()));
 
         if (original instanceof Method
-            && !Modifier.isStatic(((Method)original).getModifiers())) {
-            originalParams.add(0, ((Method)original).getDeclaringClass());
-        }
-        else if (original instanceof Constructor) {
-            originalParams.add(0, ((Constructor<?>)original).getDeclaringClass());
+                && !Modifier.isStatic(((Method) original).getModifiers())) {
+            originalParams.add(0, ((Method) original).getDeclaringClass());
+        } else if (original instanceof Constructor) {
+            originalParams.add(0, ((Constructor<?>) original).getDeclaringClass());
         }
 
 
@@ -156,11 +148,10 @@ public class HookMain {
         }
 
         if (original instanceof Method
-            && !((Method)original).getReturnType().isAssignableFrom(replacement.getReturnType())) {
-            throw new IllegalArgumentException("Incompatible return types. " + originalName + ": " + ((Method)original).getReturnType() + ", " + replacementName + ": " + replacement.getReturnType());
-        }
-        else if (original instanceof Constructor) {
-            if(replacement.getReturnType().equals(Void.class)) {
+                && !((Method) original).getReturnType().isAssignableFrom(replacement.getReturnType())) {
+            throw new IllegalArgumentException("Incompatible return types. " + originalName + ": " + ((Method) original).getReturnType() + ", " + replacementName + ": " + replacement.getReturnType());
+        } else if (original instanceof Constructor) {
+            if (replacement.getReturnType().equals(Void.class)) {
                 throw new IllegalArgumentException("Incompatible return types. " + "<init>" + ": " + "V" + ", " + replacementName + ": " + replacement.getReturnType());
             }
         }
@@ -169,7 +160,7 @@ public class HookMain {
             throw new IllegalArgumentException("Number of arguments don't match. " + originalName + ": " + originalParams.size() + ", " + replacementName + ": " + replacementParams.size());
         }
 
-        for (int i=0; i<originalParams.size(); i++) {
+        for (int i = 0; i < originalParams.size(); i++) {
             if (!replacementParams.get(i).isAssignableFrom(originalParams.get(i))) {
                 throw new IllegalArgumentException("Incompatible argument #" + i + ": " + originalName + ": " + originalParams.get(i) + ", " + replacementName + ": " + replacementParams.get(i));
             }

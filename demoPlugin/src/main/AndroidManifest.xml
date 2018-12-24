@@ -3,12 +3,11 @@
     package="lab.galaxy.yahfa.demoPlugin">
 
     <application
-        android:label="@string/app_name"
-        android:hasCode="false">
+        android:hasCode="false"
+        android:label="@string/app_name">
         <meta-data
             android:name="yahfa.hook.plugin"
-            android:value="true"
-        />
+            android:value="true" />
     </application>
 
 </manifest>
