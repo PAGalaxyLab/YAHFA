@@ -2,6 +2,8 @@ package lab.galaxy.yahfa.demoPlugin;
 
 import android.util.Log;
 
+import static lab.galaxy.yahfa.HookInfo.TAG;
+
 /**
  * Created by lrk on 5/4/17.
  */
@@ -13,12 +15,12 @@ public class Hook_ClassWithJNIMethod_fromJNI {
 
     // calling origin method is no longer available for JNI methods
     public static String hook() {
-        Log.w("YAHFA", "calling fromJNI");
+        Log.w(TAG, "calling fromJNI");
         return backup();
     }
 
     public static String backup() {
-        Log.w("YAHFA", "calling fromJNI");
+        Log.w(TAG, "calling fromJNI");
         return "1234";
     }
 }
