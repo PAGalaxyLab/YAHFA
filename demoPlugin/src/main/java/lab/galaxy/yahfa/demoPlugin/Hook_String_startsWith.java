@@ -10,8 +10,9 @@ public class Hook_String_startsWith {
     public static String className = "java.lang.String";
     public static String methodName = "startsWith";
     public static String methodSig = "(Ljava/lang/String;)Z";
+
     public static boolean hook(String thiz, String prefix) {
-        Log.w("YAHFA", "in String.startsWith(): "+thiz+", "+prefix);
+        Log.w("YAHFA", "in String.startsWith(): " + thiz + ", " + prefix);
         return backup(thiz, prefix);
     }
 

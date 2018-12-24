@@ -9,8 +9,8 @@ public class Hook_ClassWithCtor {
             "(Ljava/lang/String;)V";
 
     public static void hook(Object thiz, String param) {
-        Log.w("YAHFA", "in ClassWithCtor.<init>: "+param);
-        backup(thiz, "hooked "+param);
+        Log.w("YAHFA", "in ClassWithCtor.<init>: " + param);
+        backup(thiz, "hooked " + param);
         return;
     }
 
