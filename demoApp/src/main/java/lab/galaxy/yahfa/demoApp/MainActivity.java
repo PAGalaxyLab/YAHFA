@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Button;
 
 public class MainActivity extends Activity {
+    private static final String TAG = "origin";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,18 +27,18 @@ public class MainActivity extends Activity {
 
     void doWork() {
         // Log.e() should be hooked
-        Log.e("origin", "call Log.e()");
+        Log.e(TAG, "call Log.e()");
         // String.startsWith() should be hooked
-        Log.w("origin", "foo startsWith f is " + "foo".startsWith("f"));
+        Log.w(TAG, "foo startsWith f is " + "foo".startsWith("f"));
         // ClassWithVirtualMethod.tac() should be hooked
-        Log.w("origin", "virtual tac a,b,c,d, got " +
+        Log.w(TAG, "virtual tac a,b,c,d, got " +
                 new ClassWithVirtualMethod().tac("a", "b", "c", "d"));
         // ClassWithStaticMethod.tac() should be hooked
-        Log.w("origin", "static tac a,b,c,d, got " +
+        Log.w(TAG, "static tac a,b,c,d, got " +
                 ClassWithStaticMethod.tac("a", "b", "c", "d"));
-        Log.w("origin", "JNI method return string: " + ClassWithJNIMethod.fromJNI());
+        Log.w(TAG, "JNI method return string: " + ClassWithJNIMethod.fromJNI());
 
         ClassWithCtor classWithCtor = new ClassWithCtor("param");
-        Log.w("origin", "class ctor and get field: " + classWithCtor.getField());
+        Log.w(TAG, "class ctor and get field: " + classWithCtor.getField());
     }
 }

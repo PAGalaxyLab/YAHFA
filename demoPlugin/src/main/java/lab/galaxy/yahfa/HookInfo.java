@@ -12,6 +12,7 @@ import lab.galaxy.yahfa.demoPlugin.Hook_String_startsWith;
  */
 
 public class HookInfo {
+    public static final String TAG = "HookInfo";
     public static String[] hookItemNames = {
             Hook_Log_e.class.getName(),
             Hook_String_startsWith.class.getName(),
