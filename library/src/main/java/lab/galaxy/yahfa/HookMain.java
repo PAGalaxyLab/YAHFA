@@ -148,7 +148,7 @@ public class HookMain {
         }
 
         if (original instanceof Method
-                && !((Method) original).getReturnType().isAssignableFrom(replacement.getReturnType())) {
+                && !replacement.getReturnType().isAssignableFrom(((Method) original).getReturnType())) {
             throw new IllegalArgumentException("Incompatible return types. " + originalName + ": " + ((Method) original).getReturnType() + ", " + replacementName + ": " + replacement.getReturnType());
         } else if (original instanceof Constructor) {
             if (replacement.getReturnType().equals(Void.class)) {
