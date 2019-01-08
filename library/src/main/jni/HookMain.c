@@ -18,6 +18,7 @@ static int OFFSET_access_flags_in_ArtMethod;
 static size_t ArtMethodSize;
 static int kAccNative = 0x0100;
 static int kAccCompileDontBother = 0x01000000;
+static size_t kDexCacheMethodCacheSize = 1024;
 
 static inline uint16_t read16(void *addr) {
     return *((uint16_t *) addr);
@@ -152,7 +153,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
                               OFFSET_dex_cache_resolved_methods_in_ArtMethod));
 
             // then we get the dex method index of the static backup method
-            int methodIndex = read32(
+            unsigned int methodIndex = read32(
                     (void *) ((char *) backupMethod + OFFSET_dex_method_index_in_ArtMethod));
 
             // finally the addr of backup method is put at the corresponding location in cached methods array
@@ -162,16 +163,37 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
                 // struct NativeDexCachePair<T> = { T*, size_t idx }
                 // MethodDexCachePair = NativeDexCachePair<ArtMethod> = { ArtMethod*, size_t idx }
                 // MethodDexCacheType = std::atomic<MethodDexCachePair>
-                memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
-                       pointer_size * 2 * methodIndex,
+
+                // https://github.com/rk700/YAHFA/issues/91
+                // for Android 8.1, the MethodDexCacheType array is of limited size
+                // the remainder of method index mod array size is used for indexing
+                size_t slotIndex = methodIndex % kDexCacheMethodCacheSize;
+                LOGI("method index is %d, slot index id %d", methodIndex, slotIndex);
+
+                // any element could be overwritten since the array is of limited size
+                // so just malloc a new buffer used as cached methods array for hookMethod to resolve backupMethod
+                void *newCachedMethodsArray = calloc(kDexCacheMethodCacheSize, pointer_size * 2);
+
+                // the 0th entry of the array has method index as 1
+                unsigned int one = 1;
+                memcpy(newCachedMethodsArray + pointer_size, &one, 4);
+
+                // update the backupMethod addr in cached methods array
+                memcpy(newCachedMethodsArray + pointer_size * 2 * slotIndex,
                        (&backupMethod),
                        pointer_size
                 );
-                memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
-                       pointer_size * 2 * methodIndex + pointer_size,
+                // update the backupMethod index in cached methods array
+                memcpy(newCachedMethodsArray + pointer_size * 2 * slotIndex + pointer_size,
                        &methodIndex,
-                       pointer_size
+                       4
                 );
+
+                // use the new buffer as cached methods array for hookMethod
+                memcpy(((char *) hookMethod) + OFFSET_dex_cache_resolved_methods_in_ArtMethod,
+                       (&newCachedMethodsArray),
+                       pointer_size);
+
             } else {
                 memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
                        pointer_size * methodIndex,
