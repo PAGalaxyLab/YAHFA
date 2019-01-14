@@ -145,62 +145,6 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     }
 
     if (backupMethod) {// do method backup
-        if (SDKVersion <= ANDROID_O2) {
-            // update the cached method manually
-            // first we find the array of cached methods
-            void *dexCacheResolvedMethods = (void *) readAddr(
-                    (void *) ((char *) hookMethod +
-                              OFFSET_dex_cache_resolved_methods_in_ArtMethod));
-
-            // then we get the dex method index of the static backup method
-            unsigned int methodIndex = read32(
-                    (void *) ((char *) backupMethod + OFFSET_dex_method_index_in_ArtMethod));
-
-            // finally the addr of backup method is put at the corresponding location in cached methods array
-            if (SDKVersion == ANDROID_O2) {
-                // array of MethodDexCacheType is used as dexCacheResolvedMethods in Android 8.1
-                // struct:
-                // struct NativeDexCachePair<T> = { T*, size_t idx }
-                // MethodDexCachePair = NativeDexCachePair<ArtMethod> = { ArtMethod*, size_t idx }
-                // MethodDexCacheType = std::atomic<MethodDexCachePair>
-
-                // https://github.com/rk700/YAHFA/issues/91
-                // for Android 8.1, the MethodDexCacheType array is of limited size
-                // the remainder of method index mod array size is used for indexing
-                size_t slotIndex = methodIndex % kDexCacheMethodCacheSize;
-                LOGI("method index is %d, slot index id %d", methodIndex, slotIndex);
-
-                // any element could be overwritten since the array is of limited size
-                // so just malloc a new buffer used as cached methods array for hookMethod to resolve backupMethod
-                void *newCachedMethodsArray = calloc(kDexCacheMethodCacheSize, pointer_size * 2);
-
-                // the 0th entry of the array has method index as 1
-                unsigned int one = 1;
-                memcpy(newCachedMethodsArray + pointer_size, &one, 4);
-
-                // update the backupMethod addr in cached methods array
-                memcpy(newCachedMethodsArray + pointer_size * 2 * slotIndex,
-                       (&backupMethod),
-                       pointer_size
-                );
-                // update the backupMethod index in cached methods array
-                memcpy(newCachedMethodsArray + pointer_size * 2 * slotIndex + pointer_size,
-                       &methodIndex,
-                       4
-                );
-
-                // use the new buffer as cached methods array for hookMethod
-                memcpy(((char *) hookMethod) + OFFSET_dex_cache_resolved_methods_in_ArtMethod,
-                       (&newCachedMethodsArray),
-                       pointer_size);
-
-            } else {
-                memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
-                       pointer_size * methodIndex,
-                       (&backupMethod),
-                       pointer_size);
-            }
-        }
 
         // have to copy the whole target ArtMethod here
         // if the target method calls other methods which are to be resolved
@@ -249,6 +193,65 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     return 0;
 }
 
+static int ensureMethodCached(void *hookMethod, void *backupMethod) {
+    if (SDKVersion <= ANDROID_O2) {
+        // update the cached method manually
+        // first we find the array of cached methods
+        void *dexCacheResolvedMethods = (void *) readAddr(
+                (void *) ((char *) hookMethod +
+                          OFFSET_dex_cache_resolved_methods_in_ArtMethod));
+
+        // then we get the dex method index of the static backup method
+        unsigned int methodIndex = read32(
+                (void *) ((char *) backupMethod + OFFSET_dex_method_index_in_ArtMethod));
+
+        // finally the addr of backup method is put at the corresponding location in cached methods array
+        if (SDKVersion == ANDROID_O2) {
+            // array of MethodDexCacheType is used as dexCacheResolvedMethods in Android 8.1
+            // struct:
+            // struct NativeDexCachePair<T> = { T*, size_t idx }
+            // MethodDexCachePair = NativeDexCachePair<ArtMethod> = { ArtMethod*, size_t idx }
+            // MethodDexCacheType = std::atomic<MethodDexCachePair>
+
+            // https://github.com/rk700/YAHFA/issues/91
+            // for Android 8.1, the MethodDexCacheType array is of limited size
+            // the remainder of method index mod array size is used for indexing
+            size_t slotIndex = methodIndex % kDexCacheMethodCacheSize;
+            LOGI("method index is %d, slot index id %d", methodIndex, slotIndex);
+
+            // any element could be overwritten since the array is of limited size
+            // so just malloc a new buffer used as cached methods array for hookMethod to resolve backupMethod
+            void *newCachedMethodsArray = calloc(kDexCacheMethodCacheSize, pointer_size * 2);
+
+            // the 0th entry of the array has method index as 1
+            unsigned int one = 1;
+            memcpy(newCachedMethodsArray + pointer_size, &one, 4);
+
+            // update the backupMethod addr in cached methods array
+            memcpy(newCachedMethodsArray + pointer_size * 2 * slotIndex,
+                   (&backupMethod),
+                   pointer_size
+            );
+            // update the backupMethod index in cached methods array
+            memcpy(newCachedMethodsArray + pointer_size * 2 * slotIndex + pointer_size,
+                   &methodIndex,
+                   4
+            );
+
+            // use the new buffer as cached methods array for hookMethod
+            memcpy(((char *) hookMethod) + OFFSET_dex_cache_resolved_methods_in_ArtMethod,
+                   (&newCachedMethodsArray),
+                   pointer_size);
+
+        } else {
+                memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
+                       pointer_size * methodIndex,
+                       (&backupMethod),
+                       pointer_size);
+        }
+    }
+}
+
 jobject Java_lab_galaxy_yahfa_HookMain_findMethodNative(JNIEnv *env, jclass clazz,
                                                         jclass targetClass, jstring methodName,
                                                         jstring methodSig) {
@@ -289,4 +292,11 @@ jboolean Java_lab_galaxy_yahfa_HookMain_backupAndHookNative(JNIEnv *env, jclass 
     } else {
         return JNI_FALSE;
     }
+}
+
+
+void Java_lab_galaxy_yahfa_HookMain_ensureMethodCached(JNIEnv *env, jclass clazz,
+                                                           jobject hook,
+                                                           jobject backup) {
+    ensureMethodCached((void *) (*env)->FromReflectedMethod(env, hook), backup == NULL ? NULL : (void *) (*env)->FromReflectedMethod(env, backup));
 }
