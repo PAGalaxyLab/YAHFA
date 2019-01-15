@@ -21,6 +21,7 @@ public class HookMain {
     static {
         System.loadLibrary("yahfa");
         init(android.os.Build.VERSION.SDK_INT);
+        HookMethodResolver.init();
     }
 
     public static void doHookDefault(ClassLoader patchClassLoader, ClassLoader originClassLoader) {
@@ -105,6 +106,9 @@ public class HookMain {
             // backup is just a placeholder and the constraint could be less strict
             checkCompatibleMethods(target, backup, "Original", "Backup");
         }
+        if (backup != null) {
+            HookMethodResolver.resolveMethod(hook, backup);
+        }
         if (!backupAndHookNative(target, hook, backup)) {
             throw new RuntimeException("Failed to hook " + target + " with " + hook);
         }
@@ -168,6 +172,8 @@ public class HookMain {
     }
 
     private static native boolean backupAndHookNative(Object target, Method hook, Method backup);
+
+    public static native void ensureMethodCached(Method hook, Method backup);
 
     // JNI.ToReflectedMethod() could return either Method or Constructor
     public static native Object findMethodNative(Class targetClass, String methodName, String methodSig);
