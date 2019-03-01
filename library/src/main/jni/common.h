@@ -12,6 +12,6 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 #define pointer_size sizeof(void*)
-#define roundUpToPtrSize(v) (v + pointer_size - 1 - (v - 1) % pointer_size)
+#define roundUpToPtrSize(v) (v + pointer_size - 1 - ((v + pointer_size - 1) & (pointer_size - 1)))
 
 #endif //YAHFA_COMMON_H
