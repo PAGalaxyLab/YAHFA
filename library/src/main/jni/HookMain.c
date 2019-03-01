@@ -20,16 +20,16 @@ static int kAccNative = 0x0100;
 static int kAccCompileDontBother = 0x01000000;
 static size_t kDexCacheMethodCacheSize = 1024;
 
-static inline uint16_t read16(void *addr) {
-    return *((uint16_t *) addr);
-}
-
 static inline uint32_t read32(void *addr) {
     return *((uint32_t *) addr);
 }
 
 static inline uint64_t read64(void *addr) {
     return *((uint64_t *) addr);
+}
+
+static inline void* readAddr(void *addr) {
+    return *((void**) addr);
 }
 
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
@@ -193,7 +193,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     return 0;
 }
 
-static int ensureMethodCached(void *hookMethod, void *backupMethod) {
+static void ensureMethodCached(void *hookMethod, void *backupMethod) {
     if (SDKVersion <= ANDROID_O2) {
         // update the cached method manually
         // first we find the array of cached methods
@@ -217,7 +217,7 @@ static int ensureMethodCached(void *hookMethod, void *backupMethod) {
             // for Android 8.1, the MethodDexCacheType array is of limited size
             // the remainder of method index mod array size is used for indexing
             size_t slotIndex = methodIndex % kDexCacheMethodCacheSize;
-            LOGI("method index is %d, slot index id %d", methodIndex, slotIndex);
+            LOGI("method index is %d, slot index id %zd", methodIndex, slotIndex);
 
             // any element could be overwritten since the array is of limited size
             // so just malloc a new buffer used as cached methods array for hookMethod to resolve backupMethod
