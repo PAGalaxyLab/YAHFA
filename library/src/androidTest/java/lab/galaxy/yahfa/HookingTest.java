@@ -1,7 +1,7 @@
 package lab.galaxy.yahfa;
 
 import android.os.Build;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import org.junit.Assert;
