@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "common.h"
-#include "env.h"
 #include "trampoline.h"
 
 static unsigned char *trampolineCode; // place where trampolines are saved

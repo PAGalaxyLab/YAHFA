@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 #include "common.h"
-#include "env.h"
 #include "trampoline.h"
 
 int SDKVersion;
