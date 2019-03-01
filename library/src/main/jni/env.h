@@ -14,17 +14,7 @@
 #define ANDROID_O2 27
 #define ANDROID_P 28
 
-#define roundUpTo4(v) ((v+4-1) - ((v+4-1)&3))
-#define roundUpTo8(v) ((v+8-1) - ((v+8-1)&7))
-
-#if defined(__i386__) || defined(__arm__)
-#define pointer_size 4
-#define roundUpToPtrSize(x) roundUpTo4(x)
-#elif defined(__aarch64__) || defined(__x86_64__)
-#define pointer_size 8
-#define roundUpToPtrSize(x) roundUpTo8(x)
-#else
-#error Unsupported architecture
-#endif
+#define pointer_size sizeof(void*)
+#define roundUpToPtrSize(v) (v + pointer_size - 1 - (v - 1) % pointer_size)
 
 #endif //YAHFA_ENV_H

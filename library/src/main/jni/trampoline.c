@@ -82,6 +82,9 @@ void *genTrampoline(void *hookMethod) {
 
 #elif defined(__aarch64__)
     memcpy(targetAddr + 12, &hookMethod, pointer_size);
+
+#else
+#error Unsupported architecture
 #endif
 
     return targetAddr;
@@ -99,6 +102,8 @@ void setupTrampoline() {
             ((unsigned char) OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) << 4;
     trampoline[6] |=
             ((unsigned char) OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) >> 4;
+#else
+#error Unsupported architecture
 #endif
 }
 
