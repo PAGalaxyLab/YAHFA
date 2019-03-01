@@ -50,10 +50,11 @@ public class HookingTest {
 
 
         //------------------------ AFTER HOOKING --------------------------------
-        HookMain.backupAndHook(
+        HookAnnotation.hookClass(InstanceHook.class);
+        /*HookMain.backupAndHook(
                 InstanceHook.class.getMethod("target", int.class),
                 InstanceHook.class.getMethod("hook", InstanceHook.class, int.class),
-                InstanceHook.class.getMethod("backup", InstanceHook.class, int.class));
+                InstanceHook.class.getMethod("backup", InstanceHook.class, int.class));*/
 
         Assert.assertEquals(5, hookedInstance.target(5));
         Assert.assertEquals(2, InstanceHook.targetCount);
@@ -90,10 +91,12 @@ public class HookingTest {
 
 
         //------------------------ AFTER HOOKING --------------------------------
+        HookAnnotation.hookClass(StaticHook.class);
+        /*
         HookMain.backupAndHook(
                 StaticHook.class.getMethod("target", int.class),
                 StaticHook.class.getMethod("hook", int.class),
-                StaticHook.class.getMethod("backup", int.class));
+                StaticHook.class.getMethod("backup", int.class));*/
 
         Assert.assertEquals(5, StaticHook.target(5));
         Assert.assertEquals(2, StaticHook.targetCount);
@@ -130,10 +133,11 @@ public class HookingTest {
 
 
         //------------------------ AFTER HOOKING --------------------------------
-        HookMain.backupAndHook(
+        HookAnnotation.hookClass(CtorHook.class);
+        /*HookMain.backupAndHook(
                 CtorHook.class.getConstructor(int.class),
                 CtorHook.class.getMethod("hook", CtorHook.class, int.class),
-                CtorHook.class.getMethod("backup", CtorHook.class, int.class));
+                CtorHook.class.getMethod("backup", CtorHook.class, int.class));*/
 
         ctorHook = new CtorHook(0);
 
@@ -161,11 +165,13 @@ public class HookingTest {
             targetCount++;
         }
 
+        @HookAnnotation.ConstructorHook
         public static void hook(CtorHook thiz, int arg) {
             hookCount++;
             backup(thiz, arg);
         }
 
+        @HookAnnotation.ConstructorBackup
         public static void backup(CtorHook thiz, int arg) {
             backupCount++;
             throw new UnsupportedOperationException("Stub!");
@@ -182,11 +188,13 @@ public class HookingTest {
             return arg;
         }
 
+        @HookAnnotation.StaticMethodHook(targetClass = StaticHook.class, methodName = "target")
         public static int hook(int arg) {
             hookCount++;
             return backup(arg);
         }
 
+        @HookAnnotation.StaticMethodBackup(targetClass = StaticHook.class, methodName = "target")
         public static int backup(int arg) {
             backupCount++;
             throw new UnsupportedOperationException("Stub!");
@@ -198,11 +206,13 @@ public class HookingTest {
         static int hookCount;
         static int backupCount;
 
+        @HookAnnotation.MethodHook(methodName = "target")
         public static int hook(InstanceHook thiz, int arg) {
             hookCount++;
             return backup(thiz, arg);
         }
 
+        @HookAnnotation.MethodBackup(methodName = "target")
         public static int backup(InstanceHook thiz, int arg) {
             backupCount++;
             throw new UnsupportedOperationException("Stub!");
