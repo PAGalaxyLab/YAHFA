@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 #include "common.h"
-#include "env.h"
 #include "trampoline.h"
 
 int SDKVersion;
@@ -20,10 +19,6 @@ static int kAccNative = 0x0100;
 static int kAccCompileDontBother = 0x01000000;
 static size_t kDexCacheMethodCacheSize = 1024;
 
-static inline uint16_t read16(void *addr) {
-    return *((uint16_t *) addr);
-}
-
 static inline uint32_t read32(void *addr) {
     return *((uint32_t *) addr);
 }
@@ -32,12 +27,16 @@ static inline uint64_t read64(void *addr) {
     return *((uint64_t *) addr);
 }
 
+static inline void* readAddr(void *addr) {
+    return *((void**) addr);
+}
+
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
     int i;
     SDKVersion = sdkVersion;
     LOGI("init to SDK %d", sdkVersion);
     switch (sdkVersion) {
-        case ANDROID_P:
+        case __ANDROID_API_P__:
             kAccCompileDontBother = 0x02000000;
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_access_flags_in_ArtMethod = 4;
@@ -46,9 +45,9 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
                     roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size;
             ArtMethodSize = roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size * 2;
             break;
-        case ANDROID_O2:
+        case __ANDROID_API_O_MR1__:
             kAccCompileDontBother = 0x02000000;
-        case ANDROID_O:
+        case __ANDROID_API_O__:
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_access_flags_in_ArtMethod = 4;
             OFFSET_dex_method_index_in_ArtMethod = 4 * 3;
@@ -58,8 +57,8 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
                     roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size * 2;
             ArtMethodSize = roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size * 3;
             break;
-        case ANDROID_N2:
-        case ANDROID_N:
+        case __ANDROID_API_N_MR1__:
+        case __ANDROID_API_N__:
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_access_flags_in_ArtMethod = 4; // sizeof(GcRoot<mirror::Class>) = 4
             OFFSET_dex_method_index_in_ArtMethod = 4 * 3;
@@ -72,7 +71,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
 
             ArtMethodSize = roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size * 4;
             break;
-        case ANDROID_M:
+        case __ANDROID_API_M__:
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = roundUpToPtrSize(4 * 7);
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
@@ -82,7 +81,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             OFFSET_array_in_PointerArray = 4 * 3;
             ArtMethodSize = roundUpToPtrSize(4 * 7) + pointer_size * 3;
             break;
-        case ANDROID_L2:
+        case __ANDROID_API_L_MR1__:
             OFFSET_ArtMehod_in_Object = 4 * 2;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = roundUpToPtrSize(
                     OFFSET_ArtMehod_in_Object + 4 * 7);
@@ -93,7 +92,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             OFFSET_array_in_PointerArray = 12;
             ArtMethodSize = OFFSET_entry_point_from_interpreter_in_ArtMethod + pointer_size * 3;
             break;
-        case ANDROID_L:
+        case __ANDROID_API_L__:
             OFFSET_ArtMehod_in_Object = 4 * 2;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = OFFSET_ArtMehod_in_Object + 4 * 4;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
@@ -139,7 +138,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
 
     // set kAccCompileDontBother for a method we do not want the compiler to compile
     // so that we don't need to worry about hotness_count_
-    if (SDKVersion >= ANDROID_N) {
+    if (SDKVersion >= __ANDROID_API_N__) {
         setNonCompilable(targetMethod);
         setNonCompilable(hookMethod);
     }
@@ -177,7 +176,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     }
 
     // set the target method to native so that Android O wouldn't invoke it with interpreter
-    if (SDKVersion >= ANDROID_O) {
+    if (SDKVersion >= __ANDROID_API_O__) {
         int access_flags = read32((char *) targetMethod + OFFSET_access_flags_in_ArtMethod);
         access_flags |= kAccNative;
         memcpy(
@@ -193,8 +192,8 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     return 0;
 }
 
-static int ensureMethodCached(void *hookMethod, void *backupMethod) {
-    if (SDKVersion <= ANDROID_O2) {
+static void ensureMethodCached(void *hookMethod, void *backupMethod) {
+    if (SDKVersion <= __ANDROID_API_O_MR1__) {
         // update the cached method manually
         // first we find the array of cached methods
         void *dexCacheResolvedMethods = (void *) readAddr(
@@ -206,7 +205,7 @@ static int ensureMethodCached(void *hookMethod, void *backupMethod) {
                 (void *) ((char *) backupMethod + OFFSET_dex_method_index_in_ArtMethod));
 
         // finally the addr of backup method is put at the corresponding location in cached methods array
-        if (SDKVersion == ANDROID_O2) {
+        if (SDKVersion == __ANDROID_API_O_MR1__) {
             // array of MethodDexCacheType is used as dexCacheResolvedMethods in Android 8.1
             // struct:
             // struct NativeDexCachePair<T> = { T*, size_t idx }
@@ -217,7 +216,7 @@ static int ensureMethodCached(void *hookMethod, void *backupMethod) {
             // for Android 8.1, the MethodDexCacheType array is of limited size
             // the remainder of method index mod array size is used for indexing
             size_t slotIndex = methodIndex % kDexCacheMethodCacheSize;
-            LOGI("method index is %d, slot index id %d", methodIndex, slotIndex);
+            LOGI("method index is %d, slot index id %zd", methodIndex, slotIndex);
 
             // any element could be overwritten since the array is of limited size
             // so just malloc a new buffer used as cached methods array for hookMethod to resolve backupMethod
