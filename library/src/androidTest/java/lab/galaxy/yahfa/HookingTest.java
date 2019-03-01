@@ -51,10 +51,6 @@ public class HookingTest {
 
         //------------------------ AFTER HOOKING --------------------------------
         HookAnnotation.hookClass(InstanceHook.class);
-        /*HookMain.backupAndHook(
-                InstanceHook.class.getMethod("target", int.class),
-                InstanceHook.class.getMethod("hook", InstanceHook.class, int.class),
-                InstanceHook.class.getMethod("backup", InstanceHook.class, int.class));*/
 
         Assert.assertEquals(5, hookedInstance.target(5));
         Assert.assertEquals(2, InstanceHook.targetCount);
@@ -92,11 +88,6 @@ public class HookingTest {
 
         //------------------------ AFTER HOOKING --------------------------------
         HookAnnotation.hookClass(StaticHook.class);
-        /*
-        HookMain.backupAndHook(
-                StaticHook.class.getMethod("target", int.class),
-                StaticHook.class.getMethod("hook", int.class),
-                StaticHook.class.getMethod("backup", int.class));*/
 
         Assert.assertEquals(5, StaticHook.target(5));
         Assert.assertEquals(2, StaticHook.targetCount);
@@ -134,10 +125,6 @@ public class HookingTest {
 
         //------------------------ AFTER HOOKING --------------------------------
         HookAnnotation.hookClass(CtorHook.class);
-        /*HookMain.backupAndHook(
-                CtorHook.class.getConstructor(int.class),
-                CtorHook.class.getMethod("hook", CtorHook.class, int.class),
-                CtorHook.class.getMethod("backup", CtorHook.class, int.class));*/
 
         ctorHook = new CtorHook(0);
 
