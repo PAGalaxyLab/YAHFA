@@ -3,6 +3,7 @@
 //
 #include <sys/mman.h>
 #include <string.h>
+#include <errno.h>
 
 #include "common.h"
 #include "trampoline.h"
@@ -118,7 +119,7 @@ int doInitHookCap(unsigned int cap) {
     unsigned char *buf = mmap(NULL, allSize, PROT_READ | PROT_WRITE | PROT_EXEC,
                               MAP_ANON | MAP_PRIVATE, -1, 0);
     if (buf == MAP_FAILED) {
-        LOGE("mmap failed");
+        LOGE("mmap failed, errno = %s", strerror(errno));
         return 1;
     }
     hookCap = cap;
