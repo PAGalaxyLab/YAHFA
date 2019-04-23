@@ -3,9 +3,9 @@
 //
 #include <sys/mman.h>
 #include <string.h>
+#include <errno.h>
 
 #include "common.h"
-#include "env.h"
 #include "trampoline.h"
 
 static unsigned char *trampolineCode; // place where trampolines are saved
@@ -63,11 +63,12 @@ unsigned char trampoline[] = {
 #endif
 static unsigned int trampolineSize = roundUpToPtrSize(sizeof(trampoline));
 
-void *genTrampoline(void *hookMethod, void *backupMethod) {
+void *genTrampoline(void *hookMethod) {
     void *targetAddr;
 
-    targetAddr = trampolineCode + trampolineSize*hookCount;
-    memcpy(targetAddr, trampoline, sizeof(trampoline)); // do not use trampolineSize since it's a rounded size
+    targetAddr = trampolineCode + trampolineSize * hookCount;
+    memcpy(targetAddr, trampoline,
+           sizeof(trampoline)); // do not use trampolineSize since it's a rounded size
 
     // replace with the actual ArtMethod addr
 #if defined(__i386__)
@@ -80,7 +81,10 @@ void *genTrampoline(void *hookMethod, void *backupMethod) {
     memcpy(targetAddr+8, &hookMethod, pointer_size);
 
 #elif defined(__aarch64__)
-    memcpy(targetAddr+12, &hookMethod, pointer_size);
+    memcpy(targetAddr + 12, &hookMethod, pointer_size);
+
+#else
+#error Unsupported architecture
 #endif
 
     return targetAddr;
@@ -94,23 +98,28 @@ void setupTrampoline() {
 #elif defined(__arm__)
     trampoline[4] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 #elif defined(__aarch64__)
-    trampoline[5] |= ((unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) << 4;
-    trampoline[6] |= ((unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) >> 4;
+    trampoline[5] |=
+            ((unsigned char) OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) << 4;
+    trampoline[6] |=
+            ((unsigned char) OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) >> 4;
+#else
+#error Unsupported architecture
 #endif
 }
 
 int doInitHookCap(unsigned int cap) {
-    if(cap == 0) {
+    if (cap == 0) {
         LOGE("invalid capacity: %d", cap);
         return 1;
     }
-    if(hookCap) {
+    if (hookCap) {
         LOGW("allocating new space for trampoline code");
     }
-    unsigned int allSize = trampolineSize*cap;
-    unsigned char *buf = mmap(NULL, allSize, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
-    if(buf == MAP_FAILED) {
-        LOGE("mmap failed");
+    unsigned int allSize = trampolineSize * cap;
+    unsigned char *buf = mmap(NULL, allSize, PROT_READ | PROT_WRITE | PROT_EXEC,
+                              MAP_ANON | MAP_PRIVATE, -1, 0);
+    if (buf == MAP_FAILED) {
+        LOGE("mmap failed, errno = %s", strerror(errno));
         return 1;
     }
     hookCap = cap;

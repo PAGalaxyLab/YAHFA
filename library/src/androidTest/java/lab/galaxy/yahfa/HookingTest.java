@@ -1,7 +1,7 @@
 package lab.galaxy.yahfa;
 
 import android.os.Build;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import org.junit.Assert;
@@ -9,49 +9,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Method;
-
 @RunWith(AndroidJUnit4.class)
 public class HookingTest {
     private static final String TAG = HookingTest.class.getSimpleName();
-
-    static class StaticHook {
-        static int targetCount = 0;
-        static int hookCount = 0;
-        static int backupCount = 0;
-
-        public static int target(int arg) {
-            targetCount++;
-            return arg;
-        }
-        public static int hook(int arg) {
-            hookCount++;
-            return backup(arg);
-        }
-        public static int backup(int arg) {
-            backupCount++;
-            throw new UnsupportedOperationException("Stub!");
-        }
-    }
-
-    static class InstanceHook {
-        static int targetCount;
-        static int hookCount;
-        static int backupCount;
-
-        public int target(int arg) {
-            targetCount++;
-            return arg;
-        }
-        public static int hook(InstanceHook thiz, int arg) {
-            hookCount++;
-            return backup(thiz, arg);
-        }
-        public static int backup(InstanceHook thiz, int arg) {
-            backupCount++;
-            throw new UnsupportedOperationException("Stub!");
-        }
-    }
 
     @Before
     public void setup() {
@@ -63,6 +23,10 @@ public class HookingTest {
         InstanceHook.targetCount = 0;
         InstanceHook.hookCount = 0;
         InstanceHook.backupCount = 0;
+
+        CtorHook.targetCount = 0;
+        CtorHook.hookCount = 0;
+        CtorHook.backupCount = 0;
     }
 
     @Test
@@ -86,10 +50,7 @@ public class HookingTest {
 
 
         //------------------------ AFTER HOOKING --------------------------------
-        HookMain.backupAndHook(
-                InstanceHook.class.getMethod("target", int.class),
-                InstanceHook.class.getMethod("hook", InstanceHook.class, int.class),
-                InstanceHook.class.getMethod("backup", InstanceHook.class, int.class));
+        HookAnnotation.hookClass(InstanceHook.class);
 
         Assert.assertEquals(5, hookedInstance.target(5));
         Assert.assertEquals(2, InstanceHook.targetCount);
@@ -126,10 +87,7 @@ public class HookingTest {
 
 
         //------------------------ AFTER HOOKING --------------------------------
-        HookMain.backupAndHook(
-                StaticHook.class.getMethod("target", int.class),
-                StaticHook.class.getMethod("hook", int.class),
-                StaticHook.class.getMethod("backup", int.class));
+        HookAnnotation.hookClass(StaticHook.class);
 
         Assert.assertEquals(5, StaticHook.target(5));
         Assert.assertEquals(2, StaticHook.targetCount);
@@ -145,5 +103,111 @@ public class HookingTest {
         Assert.assertEquals(4, StaticHook.targetCount);
         Assert.assertEquals(3, StaticHook.hookCount);
         Assert.assertEquals(1, StaticHook.backupCount);
+    }
+
+    @Test
+    public void hookCtorMethod() throws Exception {
+        CtorHook ctorHook = new CtorHook(0);
+        Assert.assertEquals(1, CtorHook.targetCount);
+        Assert.assertEquals(0, CtorHook.hookCount);
+        Assert.assertEquals(0, CtorHook.backupCount);
+
+        try {
+            CtorHook.hook(ctorHook, 4);
+            Assert.fail("Backup should have failed");
+        } catch (UnsupportedOperationException e) {
+            //Ok
+        }
+        Assert.assertEquals(1, CtorHook.targetCount);
+        Assert.assertEquals(1, CtorHook.hookCount);
+        Assert.assertEquals(1, CtorHook.backupCount);
+
+
+        //------------------------ AFTER HOOKING --------------------------------
+        HookAnnotation.hookClass(CtorHook.class);
+
+        ctorHook = new CtorHook(0);
+
+        Assert.assertEquals(2, CtorHook.targetCount);
+        Assert.assertEquals(2, CtorHook.hookCount);
+        Assert.assertEquals(1, CtorHook.backupCount);
+
+        ctorHook = new CtorHook(0);
+        Assert.assertEquals(3, CtorHook.targetCount);
+        Assert.assertEquals(3, CtorHook.hookCount);
+        Assert.assertEquals(1, CtorHook.backupCount);
+
+        CtorHook.backup(ctorHook, 0);
+        Assert.assertEquals(4, CtorHook.targetCount);
+        Assert.assertEquals(3, CtorHook.hookCount);
+        Assert.assertEquals(1, CtorHook.backupCount);
+    }
+
+    static class CtorHook {
+        static int targetCount = 0;
+        static int hookCount = 0;
+        static int backupCount = 0;
+
+        public CtorHook(int arg) {
+            targetCount++;
+        }
+
+        @HookAnnotation.ConstructorHook
+        public static void hook(CtorHook thiz, int arg) {
+            hookCount++;
+            backup(thiz, arg);
+        }
+
+        @HookAnnotation.ConstructorBackup
+        public static void backup(CtorHook thiz, int arg) {
+            backupCount++;
+            throw new UnsupportedOperationException("Stub!");
+        }
+    }
+
+    static class StaticHook {
+        static int targetCount = 0;
+        static int hookCount = 0;
+        static int backupCount = 0;
+
+        public static int target(int arg) {
+            targetCount++;
+            return arg;
+        }
+
+        @HookAnnotation.StaticMethodHook(targetClass = StaticHook.class, methodName = "target")
+        public static int hook(int arg) {
+            hookCount++;
+            return backup(arg);
+        }
+
+        @HookAnnotation.StaticMethodBackup(targetClass = StaticHook.class, methodName = "target")
+        public static int backup(int arg) {
+            backupCount++;
+            throw new UnsupportedOperationException("Stub!");
+        }
+    }
+
+    static class InstanceHook {
+        static int targetCount;
+        static int hookCount;
+        static int backupCount;
+
+        @HookAnnotation.MethodHook(methodName = "target")
+        public static int hook(InstanceHook thiz, int arg) {
+            hookCount++;
+            return backup(thiz, arg);
+        }
+
+        @HookAnnotation.MethodBackup(methodName = "target")
+        public static int backup(InstanceHook thiz, int arg) {
+            backupCount++;
+            throw new UnsupportedOperationException("Stub!");
+        }
+
+        public int target(int arg) {
+            targetCount++;
+            return arg;
+        }
     }
 }

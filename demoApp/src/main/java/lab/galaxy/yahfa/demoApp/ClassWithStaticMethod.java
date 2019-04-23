@@ -8,8 +8,7 @@ public class ClassWithStaticMethod {
     public static String tac(String a, String b, String c, String d) {
         try {
             return d + c + b + a;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return "";
         }

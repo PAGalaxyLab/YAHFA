@@ -3,7 +3,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES:= HookMain.c trampoline.c
 
-LOCAL_LDLIBS    := -llog
+LOCAL_LDLIBS:= -llog
 
 LOCAL_MODULE:= yahfa
 
