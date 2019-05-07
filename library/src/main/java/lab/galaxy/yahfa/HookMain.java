@@ -101,7 +101,7 @@ public class HookMain {
         checkCompatibleMethods(target, hook, "Original", "Hook");
         if (backup != null) {
             if (!Modifier.isStatic(backup.getModifiers())) {
-                throw new IllegalArgumentException("Backup must be a static method: " + hook);
+                throw new IllegalArgumentException("Backup must be a static method: " + backup);
             }
             // backup is just a placeholder and the constraint could be less strict
             checkCompatibleMethods(target, backup, "Original", "Backup");
@@ -178,5 +178,5 @@ public class HookMain {
     // JNI.ToReflectedMethod() could return either Method or Constructor
     public static native Object findMethodNative(Class targetClass, String methodName, String methodSig);
 
-    private static native void init(int SDK_version);
+    private static native void init(int sdkVersion);
 }
