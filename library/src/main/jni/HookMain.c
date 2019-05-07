@@ -27,8 +27,8 @@ static inline uint64_t read64(void *addr) {
     return *((uint64_t *) addr);
 }
 
-static inline void* readAddr(void *addr) {
-    return *((void**) addr);
+static inline void *readAddr(void *addr) {
+    return *((void **) addr);
 }
 
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
@@ -243,10 +243,10 @@ static void ensureMethodCached(void *hookMethod, void *backupMethod) {
                    pointer_size);
 
         } else {
-                memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
-                       pointer_size * methodIndex,
-                       (&backupMethod),
-                       pointer_size);
+            memcpy((char *) dexCacheResolvedMethods + OFFSET_array_in_PointerArray +
+                   pointer_size * methodIndex,
+                   (&backupMethod),
+                   pointer_size);
         }
     }
 }
@@ -295,7 +295,8 @@ jboolean Java_lab_galaxy_yahfa_HookMain_backupAndHookNative(JNIEnv *env, jclass 
 
 
 void Java_lab_galaxy_yahfa_HookMain_ensureMethodCached(JNIEnv *env, jclass clazz,
-                                                           jobject hook,
-                                                           jobject backup) {
-    ensureMethodCached((void *) (*env)->FromReflectedMethod(env, hook), backup == NULL ? NULL : (void *) (*env)->FromReflectedMethod(env, backup));
+                                                       jobject hook,
+                                                       jobject backup) {
+    ensureMethodCached((void *) (*env)->FromReflectedMethod(env, hook),
+                       backup == NULL ? NULL : (void *) (*env)->FromReflectedMethod(env, backup));
 }
