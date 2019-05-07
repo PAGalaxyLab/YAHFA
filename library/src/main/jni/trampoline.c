@@ -72,7 +72,7 @@ void *genTrampoline(void *hookMethod) {
 
     // replace with the actual ArtMethod addr
 #if defined(__i386__)
-    memcpy(targetAddr+1, &hookMethod, pointer_size);
+    memcpy(targetAddr + 1, &hookMethod, pointer_size);
 
 #elif defined(__x86_64__)
     memcpy((char*)targetAddr + 2, &hookMethod, pointer_size);
@@ -92,7 +92,7 @@ void *genTrampoline(void *hookMethod) {
 
 void setupTrampoline() {
 #if defined(__i386__)
-    trampoline[7] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+    trampoline[7] = (unsigned char) OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 #elif defined(__x86_64__)
     trampoline[12] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 #elif defined(__arm__)

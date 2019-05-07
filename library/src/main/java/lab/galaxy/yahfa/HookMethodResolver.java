@@ -1,5 +1,8 @@
 package lab.galaxy.yahfa;
 
+import android.os.Build;
+import android.util.Log;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
@@ -9,7 +12,7 @@ import java.lang.reflect.Method;
  */
 
 public class HookMethodResolver {
-
+    private static final String TAG = "HookMethodResolver";
     public static Class artMethodClass;
 
     public static Field resolvedMethodsField;
@@ -32,6 +35,12 @@ public class HookMethodResolver {
 
     private static void checkSupport() {
         try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                isArtMethod = false;
+                canResolvedInJava = false;
+                return;
+            }
+
             testMethod = HookMethodResolver.class.getDeclaredMethod("init");
             artMethodField = getField(Method.class, "artMethod");
 
@@ -47,8 +56,8 @@ public class HookMethodResolver {
                 canResolvedInJava = false;
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable throwable) {
+            Log.e(TAG, "error when checkSupport", throwable);
         }
     }
 
@@ -127,6 +136,9 @@ public class HookMethodResolver {
     }
 
     public static boolean hasJavaArtMethod() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return false;
+        }
         if (artMethodClass != null)
             return true;
         try {
