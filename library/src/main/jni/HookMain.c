@@ -112,6 +112,9 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
 }
 
 static void setNonCompilable(void *method) {
+    if (SDKVersion < __ANDROID_API_N__) {
+        return;
+    }
     int access_flags = read32((char *) method + OFFSET_access_flags_in_ArtMethod);
     LOGI("setNonCompilable: access flags is 0x%x", access_flags);
     access_flags |= kAccCompileDontBother;
@@ -124,7 +127,7 @@ static void setNonCompilable(void *method) {
 
 static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMethod) {
     if (hookCount >= hookCap) {
-        LOGW("not enough capacity. Allocating...");
+        LOGI("not enough capacity. Allocating...");
         if (doInitHookCap(DEFAULT_CAP)) {
             LOGE("cannot hook method");
             return 1;
@@ -144,7 +147,6 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     }
 
     if (backupMethod) {// do method backup
-
         // have to copy the whole target ArtMethod here
         // if the target method calls other methods which are to be resolved
         // then ToDexPC would be invoked for the caller(origin method)
@@ -165,7 +167,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
                &newEntrypoint,
                pointer_size);
     } else {
-        LOGW("failed to allocate space for trampoline of target method");
+        LOGE("failed to allocate space for trampoline of target method");
         return 1;
     }
 
@@ -268,6 +270,8 @@ jobject Java_lab_galaxy_yahfa_HookMain_findMethodNative(JNIEnv *env, jclass claz
         method = (*env)->GetStaticMethodID(env, targetClass, c_methodName, c_methodSig);
         if (!(*env)->ExceptionCheck(env)) {
             ret = (*env)->ToReflectedMethod(env, targetClass, method, JNI_TRUE);
+        } else {
+            (*env)->ExceptionClear(env);
         }
     }
 
