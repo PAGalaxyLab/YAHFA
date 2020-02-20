@@ -17,14 +17,15 @@ static int OFFSET_access_flags_in_ArtMethod;
 static size_t ArtMethodSize;
 static int kAccNative = 0x0100;
 static int kAccCompileDontBother = 0x01000000;
+static int kAccFastInterpreterToInterpreterInvoke = 0x40000000;
 static size_t kDexCacheMethodCacheSize = 1024;
 
 static inline uint32_t read32(void *addr) {
     return *((uint32_t *) addr);
 }
 
-static inline uint64_t read64(void *addr) {
-    return *((uint64_t *) addr);
+static inline void write32(void *addr, uint32_t value) {
+    *((uint32_t *) addr) = value;
 }
 
 static inline void *readAddr(void *addr) {
@@ -36,6 +37,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
     SDKVersion = sdkVersion;
     LOGI("init to SDK %d", sdkVersion);
     switch (sdkVersion) {
+        case __ANDROID_API_Q__:
         case __ANDROID_API_P__:
             kAccCompileDontBother = 0x02000000;
             OFFSET_ArtMehod_in_Object = 0;
@@ -118,11 +120,7 @@ static void setNonCompilable(void *method) {
     int access_flags = read32((char *) method + OFFSET_access_flags_in_ArtMethod);
     LOGI("setNonCompilable: access flags is 0x%x", access_flags);
     access_flags |= kAccCompileDontBother;
-    memcpy(
-            (char *) method + OFFSET_access_flags_in_ArtMethod,
-            &access_flags,
-            4
-    );
+    write32((char *) method + OFFSET_access_flags_in_ArtMethod, access_flags);
 }
 
 static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMethod) {
@@ -181,11 +179,11 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     if (SDKVersion >= __ANDROID_API_O__) {
         int access_flags = read32((char *) targetMethod + OFFSET_access_flags_in_ArtMethod);
         access_flags |= kAccNative;
-        memcpy(
-                (char *) targetMethod + OFFSET_access_flags_in_ArtMethod,
-                &access_flags,
-                4
-        );
+        if (SDKVersion >= __ANDROID_API_Q__) {
+            // On API 29 whether to use the fast path or not is cached in the ART method structure
+            access_flags &= ~kAccFastInterpreterToInterpreterInvoke;
+        }
+        write32((char *) targetMethod + OFFSET_access_flags_in_ArtMethod, access_flags);
         LOGI("access flags is 0x%x", access_flags);
     }
 
