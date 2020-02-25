@@ -13,6 +13,7 @@ YAHFA is a hook framework for Android ART. It provides an efficient way for Java
 - Android 8.0(API 26)
 - Android 8.1(API 27)
 - Android 9.0(API 28)
+- Android 10.0(API 29)
 
 with ABI:
 

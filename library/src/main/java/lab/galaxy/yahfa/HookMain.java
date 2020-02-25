@@ -16,8 +16,7 @@ import java.util.List;
 
 public class HookMain {
     private static final String TAG = "YAHFA";
-    private static List<Class<?>> hookInfoClasses = new LinkedList<>();
-
+    
     static {
         System.loadLibrary("yahfa");
         init(android.os.Build.VERSION.SDK_INT);
@@ -31,7 +30,6 @@ public class HookMain {
             for (String hookItemName : hookItemNames) {
                 doHookItemDefault(patchClassLoader, hookItemName, originClassLoader);
             }
-            hookInfoClasses.add(hookInfoClass);
         } catch (Exception e) {
             e.printStackTrace();
         }
