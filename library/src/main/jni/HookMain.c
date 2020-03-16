@@ -1,10 +1,14 @@
-#include "jni.h"
+#include <jni.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <stdlib.h>
+#include <dlfcn.h>
 
 #include "common.h"
 #include "trampoline.h"
+#include "dl.h"
+
+typedef void *(*decodeMethodFunc)(void *, void *);
 
 int SDKVersion;
 static int OFFSET_entry_point_from_interpreter_in_ArtMethod;
@@ -20,6 +24,11 @@ static int kAccCompileDontBother = 0x01000000;
 static int kAccFastInterpreterToInterpreterInvoke = 0x40000000;
 static size_t kDexCacheMethodCacheSize = 1024;
 
+void *libart = NULL;
+void *idManager = NULL;
+decodeMethodFunc decodeMethodID = NULL;
+
+
 static inline uint32_t read32(void *addr) {
     return *((uint32_t *) addr);
 }
@@ -32,11 +41,24 @@ static inline void *readAddr(void *addr) {
     return *((void **) addr);
 }
 
+// __ANDROID_API_R__ not defined yet in api-level.h
+#define __ANDROID_API_R__ 30
+
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
     int i;
     SDKVersion = sdkVersion;
     LOGI("init to SDK %d", sdkVersion);
     switch (sdkVersion) {
+        case __ANDROID_API_R__:
+            libart = art_dlopen("libart.so", RTLD_LAZY);
+            LOGI("libart handle: %p", libart);
+            char *runtime_instance = readAddr(art_dlsym(libart, "_ZN3art7Runtime9instance_E"));
+            decodeMethodID = art_dlsym(libart, "_ZN3art3jni12JniIdManager14DecodeMethodIdEP10_jmethodID");
+#if defined(__i386__) || defined(__arm__)
+            idManager = readAddr(runtime_instance+0x120); // offset of jni_id_manager in Runtime instance: 0x120
+#else
+            idManager = readAddr(runtime_instance+0x1f0); // offset of jni_id_manager in Runtime instance: 0x1f0
+#endif
         case __ANDROID_API_Q__:
         case __ANDROID_API_P__:
             kAccCompileDontBother = 0x02000000;
@@ -124,6 +146,11 @@ static void setNonCompilable(void *method) {
 }
 
 static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMethod) {
+    if(targetMethod == NULL || hookMethod == NULL) {
+        LOGE("empty method target %p, hook %p, backup %p", targetMethod, hookMethod, backupMethod);
+        return 1;
+    }
+
     if (hookCount >= hookCap) {
         LOGI("not enough capacity. Allocating...");
         if (doInitHookCap(DEFAULT_CAP)) {
@@ -135,7 +162,6 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
 
     LOGI("target method is at %p, hook method is at %p, backup method is at %p",
          targetMethod, hookMethod, backupMethod);
-
 
     // set kAccCompileDontBother for a method we do not want the compiler to compile
     // so that we don't need to worry about hotness_count_
@@ -251,6 +277,16 @@ static void ensureMethodCached(void *hookMethod, void *backupMethod) {
     }
 }
 
+static void *getArtMethod(JNIEnv *env, jobject jmethod) {
+    if(jmethod == NULL) return NULL;
+    void *methodID = (void *) (*env)->FromReflectedMethod(env, jmethod);
+    void *artMethod = (*decodeMethodID)(idManager, methodID);
+
+    LOGI("decode artmethod: method id %x, ArtMethod %p", methodID, artMethod);
+    return artMethod;
+
+}
+
 jobject Java_lab_galaxy_yahfa_HookMain_findMethodNative(JNIEnv *env, jclass clazz,
                                                         jclass targetClass, jstring methodName,
                                                         jstring methodSig) {
@@ -282,10 +318,12 @@ jboolean Java_lab_galaxy_yahfa_HookMain_backupAndHookNative(JNIEnv *env, jclass 
                                                             jobject target, jobject hook,
                                                             jobject backup) {
 
+
+
     if (!doBackupAndHook(
-            (void *) (*env)->FromReflectedMethod(env, target),
-            (void *) (*env)->FromReflectedMethod(env, hook),
-            backup == NULL ? NULL : (void *) (*env)->FromReflectedMethod(env, backup)
+            getArtMethod(env, target),
+            getArtMethod(env, hook),
+            getArtMethod(env, backup)
     )) {
         (*env)->NewGlobalRef(env,
                              hook); // keep a global ref so that the hook method would not be GCed

@@ -14,6 +14,7 @@ android {
             path 'src/main/jni/Android.mk'
         }
     }
+    buildToolsVersion = '29.0.2'
 }
 
 dependencies {

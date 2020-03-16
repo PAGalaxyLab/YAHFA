@@ -7,8 +7,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Created by liuruikai756 on 28/03/2017.
@@ -19,7 +17,12 @@ public class HookMain {
     
     static {
         System.loadLibrary("yahfa");
-        init(android.os.Build.VERSION.SDK_INT);
+        if(android.os.Build.VERSION.RELEASE.equals("R")) {
+            init(30); // build.version.sdk is still 29 on android R emulator image
+        }
+        else {
+            init(android.os.Build.VERSION.SDK_INT);
+        }
         HookMethodResolver.init();
     }
 
@@ -107,6 +110,7 @@ public class HookMain {
         if (backup != null) {
             HookMethodResolver.resolveMethod(hook, backup);
         }
+
         if (!backupAndHookNative(target, hook, backup)) {
             throw new RuntimeException("Failed to hook " + target + " with " + hook);
         }
