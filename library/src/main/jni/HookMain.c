@@ -55,9 +55,9 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             char *runtime_instance = readAddr(art_dlsym(libart, "_ZN3art7Runtime9instance_E"));
             decodeMethodID = art_dlsym(libart, "_ZN3art3jni12JniIdManager14DecodeMethodIdEP10_jmethodID");
 #if defined(__i386__) || defined(__arm__)
-            idManager = readAddr(runtime_instance+0x120); // offset of jni_id_manager in Runtime instance: 0x120
+            idManager = readAddr(runtime_instance+0x11c);
 #else
-            idManager = readAddr(runtime_instance+0x1f0); // offset of jni_id_manager in Runtime instance: 0x1f0
+            idManager = readAddr(runtime_instance+0x1e8);
 #endif
         case __ANDROID_API_Q__:
         case __ANDROID_API_P__:
