@@ -280,6 +280,9 @@ static void ensureMethodCached(void *hookMethod, void *backupMethod) {
 static void *getArtMethod(JNIEnv *env, jobject jmethod) {
     if(jmethod == NULL) return NULL;
     void *methodID = (void *) (*env)->FromReflectedMethod(env, jmethod);
+    if(((int)methodID) & 1 == 0) {
+        return methodID;
+    }
     void *artMethod = (*decodeMethodID)(idManager, methodID);
 
     LOGI("decode artmethod: method id %x, ArtMethod %p", methodID, artMethod);

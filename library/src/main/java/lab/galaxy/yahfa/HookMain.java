@@ -17,7 +17,7 @@ public class HookMain {
     
     static {
         System.loadLibrary("yahfa");
-        if(android.os.Build.VERSION.RELEASE.equals("R")) {
+        if(android.os.Build.VERSION.PREVIEW_SDK_INT != 0) {
             init(30); // build.version.sdk is still 29 on android R emulator image
         }
         else {
