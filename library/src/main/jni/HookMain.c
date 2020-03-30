@@ -123,7 +123,7 @@ static void setNonCompilable(void *method) {
     write32((char *) method + OFFSET_access_flags_in_ArtMethod, access_flags);
 }
 
-static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMethod) {
+static int doHook(void *targetMethod, void *hookMethod) {
     if (hookCount >= hookCap) {
         LOGI("not enough capacity. Allocating...");
         if (doInitHookCap(DEFAULT_CAP)) {
@@ -133,26 +133,7 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
         LOGI("Allocating done");
     }
 
-    LOGI("target method is at %p, hook method is at %p, backup method is at %p",
-         targetMethod, hookMethod, backupMethod);
-
-
-    // set kAccCompileDontBother for a method we do not want the compiler to compile
-    // so that we don't need to worry about hotness_count_
-    if (SDKVersion >= __ANDROID_API_N__) {
-        setNonCompilable(targetMethod);
-        setNonCompilable(hookMethod);
-    }
-
-    if (backupMethod) {// do method backup
-        // have to copy the whole target ArtMethod here
-        // if the target method calls other methods which are to be resolved
-        // then ToDexPC would be invoked for the caller(origin method)
-        // in which case ToDexPC would use the entrypoint as a base for mapping pc to dex offset
-        // so any changes to the target method's entrypoint would result in a wrong dex offset
-        // and artQuickResolutionTrampoline would fail for methods called by the origin method
-        memcpy(backupMethod, targetMethod, ArtMethodSize);
-    }
+    LOGI("target method is at %p, hook method is at %p", targetMethod, hookMethod);
 
     // replace entry point
     void *newEntrypoint = genTrampoline(hookMethod);
@@ -187,9 +168,43 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
         LOGI("access flags is 0x%x", access_flags);
     }
 
-    LOGI("hook and backup done");
+    LOGI("hook done");
     hookCount += 1;
     return 0;
+
+}
+
+static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMethod) {
+    LOGI("target method is at %p, hook method is at %p, backup method is at %p",
+         targetMethod, hookMethod, backupMethod);
+
+    int res = 0;
+
+    // set kAccCompileDontBother for a method we do not want the compiler to compile
+    // so that we don't need to worry about hotness_count_
+    if (SDKVersion >= __ANDROID_API_N__) {
+        setNonCompilable(targetMethod);
+        setNonCompilable(hookMethod);
+        if(backupMethod) setNonCompilable(backupMethod);
+    }
+
+    if (backupMethod) {// do method backup
+        // have to copy the whole target ArtMethod here
+        // if the target method calls other methods which are to be resolved
+        // then ToDexPC would be invoked for the caller(origin method)
+        // in which case ToDexPC would use the entrypoint as a base for mapping pc to dex offset
+        // so any changes to the target method's entrypoint would result in a wrong dex offset
+        // and artQuickResolutionTrampoline would fail for methods called by the origin method
+        void *backupMethod_raw = malloc(ArtMethodSize);
+        memcpy(backupMethod_raw, targetMethod, ArtMethodSize);
+
+        res += doHook(backupMethod, backupMethod_raw);
+    }
+
+    res += doHook(targetMethod, hookMethod);
+
+    LOGI("hook and backup done");
+    return res;
 }
 
 static void ensureMethodCached(void *hookMethod, void *backupMethod) {
@@ -299,6 +314,6 @@ jboolean Java_lab_galaxy_yahfa_HookMain_backupAndHookNative(JNIEnv *env, jclass 
 void Java_lab_galaxy_yahfa_HookMain_ensureMethodCached(JNIEnv *env, jclass clazz,
                                                        jobject hook,
                                                        jobject backup) {
-    ensureMethodCached((void *) (*env)->FromReflectedMethod(env, hook),
-                       backup == NULL ? NULL : (void *) (*env)->FromReflectedMethod(env, backup));
+//    ensureMethodCached((void *) (*env)->FromReflectedMethod(env, hook),
+//                       backup == NULL ? NULL : (void *) (*env)->FromReflectedMethod(env, backup));
 }
