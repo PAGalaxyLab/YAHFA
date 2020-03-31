@@ -2,6 +2,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <stdlib.h>
+#include <dlfcn.h>
 
 #include "common.h"
 #include "trampoline.h"
@@ -11,10 +12,10 @@ static int OFFSET_entry_point_from_interpreter_in_ArtMethod;
 int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 static int OFFSET_ArtMehod_in_Object;
 static int OFFSET_access_flags_in_ArtMethod;
-static size_t ArtMethodSize;
 static int kAccNative = 0x0100;
 static int kAccCompileDontBother = 0x01000000;
 static int kAccFastInterpreterToInterpreterInvoke = 0x40000000;
+
 
 static inline uint32_t read32(void *addr) {
     return *((uint32_t *) addr);
@@ -41,7 +42,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             //OFFSET_dex_method_index_in_ArtMethod = 4*3;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size;
-            ArtMethodSize = roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size * 2;
             break;
         case __ANDROID_API_O_MR1__:
             kAccCompileDontBother = 0x02000000;
@@ -50,7 +50,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             OFFSET_access_flags_in_ArtMethod = 4;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size * 2;
-            ArtMethodSize = roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size * 3;
             break;
         case __ANDROID_API_N_MR1__:
         case __ANDROID_API_N__:
@@ -59,15 +58,12 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             // ptr_sized_fields_ is rounded up to pointer_size in ArtMethod
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size * 3;
-
-            ArtMethodSize = roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size * 4;
             break;
         case __ANDROID_API_M__:
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = roundUpToPtrSize(4 * 7);
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     OFFSET_entry_point_from_interpreter_in_ArtMethod + pointer_size * 2;
-            ArtMethodSize = roundUpToPtrSize(4 * 7) + pointer_size * 3;
             break;
         case __ANDROID_API_L_MR1__:
             OFFSET_ArtMehod_in_Object = 4 * 2;
@@ -75,14 +71,12 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
                     OFFSET_ArtMehod_in_Object + 4 * 7);
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     OFFSET_entry_point_from_interpreter_in_ArtMethod + pointer_size * 2;
-            ArtMethodSize = OFFSET_entry_point_from_interpreter_in_ArtMethod + pointer_size * 3;
             break;
         case __ANDROID_API_L__:
             OFFSET_ArtMehod_in_Object = 4 * 2;
             OFFSET_entry_point_from_interpreter_in_ArtMethod = OFFSET_ArtMehod_in_Object + 4 * 4;
             OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     OFFSET_entry_point_from_interpreter_in_ArtMethod + 8 * 2;
-            ArtMethodSize = OFFSET_ArtMehod_in_Object + 4 * 4 + 8 * 4 + 4 * 4;
             break;
         default:
             LOGE("not compatible with SDK %d", sdkVersion);
@@ -97,12 +91,14 @@ static void setNonCompilable(void *method) {
         return;
     }
     int access_flags = read32((char *) method + OFFSET_access_flags_in_ArtMethod);
-    LOGI("setNonCompilable: access flags is 0x%x", access_flags);
+    int old_flags = access_flags;
     access_flags |= kAccCompileDontBother;
     write32((char *) method + OFFSET_access_flags_in_ArtMethod, access_flags);
+    LOGI("setNonCompilable: change access flags from 0x%x to 0x%x", old_flags, access_flags);
+
 }
 
-static int doHook(void *targetMethod, void *hookMethod) {
+static int replaceMethod(void *fromMethod, void *toMethod, int isBackup) {
     if (hookCount >= hookCap) {
         LOGI("not enough capacity. Allocating...");
         if (doInitHookCap(DEFAULT_CAP)) {
@@ -112,16 +108,24 @@ static int doHook(void *targetMethod, void *hookMethod) {
         LOGI("Allocating done");
     }
 
-    LOGI("target method is at %p, hook method is at %p", targetMethod, hookMethod);
+    LOGI("replace method from %p to %p", fromMethod, toMethod);
 
     // replace entry point
-    void *newEntrypoint = genTrampoline(hookMethod);
-    LOGI("origin ep is %p, new ep is %p",
-         readAddr((char *) targetMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod),
+    void *newEntrypoint = NULL;
+    if(isBackup) {
+        void *originEntrypoint = readAddr((char *) toMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod);
+        newEntrypoint = genTrampoline(toMethod, originEntrypoint);
+    }
+    else {
+         newEntrypoint = genTrampoline(toMethod, NULL);
+    }
+
+    LOGI("replace entry point from %p to %p",
+         readAddr((char *) fromMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod),
          newEntrypoint
     );
     if (newEntrypoint) {
-        memcpy((char *) targetMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
+        memcpy((char *) fromMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod,
                &newEntrypoint,
                pointer_size);
     } else {
@@ -130,24 +134,24 @@ static int doHook(void *targetMethod, void *hookMethod) {
     }
 
     if (OFFSET_entry_point_from_interpreter_in_ArtMethod != 0) {
-        memcpy((char *) targetMethod + OFFSET_entry_point_from_interpreter_in_ArtMethod,
-               (char *) hookMethod + OFFSET_entry_point_from_interpreter_in_ArtMethod,
+        memcpy((char *) fromMethod + OFFSET_entry_point_from_interpreter_in_ArtMethod,
+               (char *) toMethod + OFFSET_entry_point_from_interpreter_in_ArtMethod,
                pointer_size);
     }
 
     // set the target method to native so that Android O wouldn't invoke it with interpreter
     if (SDKVersion >= __ANDROID_API_O__) {
-        int access_flags = read32((char *) targetMethod + OFFSET_access_flags_in_ArtMethod);
+        int access_flags = read32((char *) fromMethod + OFFSET_access_flags_in_ArtMethod);
+        int old_flags = access_flags;
         access_flags |= kAccNative;
         if (SDKVersion >= __ANDROID_API_Q__) {
             // On API 29 whether to use the fast path or not is cached in the ART method structure
             access_flags &= ~kAccFastInterpreterToInterpreterInvoke;
         }
-        write32((char *) targetMethod + OFFSET_access_flags_in_ArtMethod, access_flags);
-        LOGI("access flags is 0x%x", access_flags);
+        write32((char *) fromMethod + OFFSET_access_flags_in_ArtMethod, access_flags);
+        LOGI("change access flags from 0x%x to 0x%x", old_flags, access_flags);
     }
 
-    LOGI("hook done");
     hookCount += 1;
     return 0;
 
@@ -163,24 +167,17 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     // so that we don't need to worry about hotness_count_
     if (SDKVersion >= __ANDROID_API_N__) {
         setNonCompilable(targetMethod);
-        setNonCompilable(hookMethod);
+//        setNonCompilable(hookMethod);
         if(backupMethod) setNonCompilable(backupMethod);
     }
 
     if (backupMethod) {// do method backup
-        // have to copy the whole target ArtMethod here
-        // if the target method calls other methods which are to be resolved
-        // then ToDexPC would be invoked for the caller(origin method)
-        // in which case ToDexPC would use the entrypoint as a base for mapping pc to dex offset
-        // so any changes to the target method's entrypoint would result in a wrong dex offset
-        // and artQuickResolutionTrampoline would fail for methods called by the origin method
-        void *backupMethod_raw = malloc(ArtMethodSize);
-        memcpy(backupMethod_raw, targetMethod, ArtMethodSize);
-
-        res += doHook(backupMethod, backupMethod_raw);
+        // we use the same way as hooking target method
+        // hook backup method and redirect back to the original target method
+        res += replaceMethod(backupMethod, targetMethod, 1);
     }
 
-    res += doHook(targetMethod, hookMethod);
+    res += replaceMethod(targetMethod, hookMethod, 0);
 
     LOGI("hook and backup done");
     return res;

@@ -21,7 +21,13 @@ public class Hook_ClassWithVirtualMethod_tac {
     }
 
     public static String backup(Object thiz, String a, String b, String c, String d) {
-        Log.w(TAG, "ClassWithVirtualMethod.tac() should not be here");
+        try {
+            Log.w(TAG, "ClassWithVirtualMethod.tac() should not be here");
+        }
+        catch (Exception e) {
+
+        }
         return "";
     }
 }
+

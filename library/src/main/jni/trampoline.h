@@ -17,7 +17,7 @@ int doInitHookCap(unsigned int cap);
 
 void setupTrampoline();
 
-void *genTrampoline(void *hookMethod);
+void *genTrampoline(void *toMethod, void *entrypoint);
 
 #define DEFAULT_CAP 100 //size of each trampoline area would be no more than 4k Bytes(one page)
 
