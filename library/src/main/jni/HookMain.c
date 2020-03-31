@@ -222,8 +222,8 @@ jboolean Java_lab_galaxy_yahfa_HookMain_backupAndHookNative(JNIEnv *env, jclass 
             (void *) (*env)->FromReflectedMethod(env, hook),
             backup == NULL ? NULL : (void *) (*env)->FromReflectedMethod(env, backup)
     )) {
-        (*env)->NewGlobalRef(env,
-                             hook); // keep a global ref so that the hook method would not be GCed
+        (*env)->NewGlobalRef(env, hook); // keep a global ref so that the hook method would not be GCed
+        if(backup) (*env)->NewGlobalRef(env, backup);
         return JNI_TRUE;
     } else {
         return JNI_FALSE;
