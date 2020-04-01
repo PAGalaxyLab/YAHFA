@@ -22,7 +22,7 @@ unsigned int hookCount = 0;
 
 // trampoline for backup:
 // 1. set eax/rdi/r0/x0 to the target ArtMethod addr
-// 2. ret to the original entry point
+// 2. ret to the hardcoded original entry point
 
 #if defined(__i386__)
 // b8 78 56 34 12 ; mov eax, 0x12345678 (addr of the hook method)
@@ -177,18 +177,16 @@ void *genTrampoline(void *toMethod, void *entrypoint) {
     return targetAddr;
 }
 
-void setupTrampoline() {
+void setupTrampoline(uint8_t offset) {
 #if defined(__i386__)
-    trampoline[7] = (unsigned char) OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+    trampoline[7] = offset;
 #elif defined(__x86_64__)
-    trampoline[12] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+    trampoline[12] = offset;
 #elif defined(__arm__)
-    trampoline[4] = (unsigned char)OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+    trampoline[4] = offset;
 #elif defined(__aarch64__)
-    trampoline[5] |=
-            ((unsigned char) OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) << 4;
-    trampoline[6] |=
-            ((unsigned char) OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod) >> 4;
+    trampoline[5] |= offset << 4;
+    trampoline[6] |= offset >> 4;
 #else
 #error Unsupported architecture
 #endif

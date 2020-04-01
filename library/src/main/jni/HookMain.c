@@ -9,7 +9,7 @@
 
 int SDKVersion;
 static int OFFSET_entry_point_from_interpreter_in_ArtMethod;
-int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+static int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 static int OFFSET_ArtMehod_in_Object;
 static int OFFSET_access_flags_in_ArtMethod;
 static int kAccNative = 0x0100;
@@ -83,17 +83,26 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             break;
     }
 
-    setupTrampoline();
+    setupTrampoline(OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod);
+}
+
+static uint32_t getFlags(char *method) {
+    uint32_t access_flags = read32(method + OFFSET_access_flags_in_ArtMethod);
+    return access_flags;
+}
+
+static void setFlags(char *method, uint32_t access_flags) {
+    write32(method + OFFSET_access_flags_in_ArtMethod, access_flags);
 }
 
 static void setNonCompilable(void *method) {
     if (SDKVersion < __ANDROID_API_N__) {
         return;
     }
-    int access_flags = read32((char *) method + OFFSET_access_flags_in_ArtMethod);
+    int access_flags = getFlags(method);
     int old_flags = access_flags;
     access_flags |= kAccCompileDontBother;
-    write32((char *) method + OFFSET_access_flags_in_ArtMethod, access_flags);
+    setFlags(method, access_flags);
     LOGI("setNonCompilable: change access flags from 0x%x to 0x%x", old_flags, access_flags);
 
 }
@@ -114,10 +123,12 @@ static int replaceMethod(void *fromMethod, void *toMethod, int isBackup) {
     void *newEntrypoint = NULL;
     if(isBackup) {
         void *originEntrypoint = readAddr((char *) toMethod + OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod);
+        // entry point hardcoded
         newEntrypoint = genTrampoline(toMethod, originEntrypoint);
     }
     else {
-         newEntrypoint = genTrampoline(toMethod, NULL);
+        // entry point from ArtMethod struct
+        newEntrypoint = genTrampoline(toMethod, NULL);
     }
 
     LOGI("replace entry point from %p to %p",
@@ -141,14 +152,14 @@ static int replaceMethod(void *fromMethod, void *toMethod, int isBackup) {
 
     // set the target method to native so that Android O wouldn't invoke it with interpreter
     if (SDKVersion >= __ANDROID_API_O__) {
-        int access_flags = read32((char *) fromMethod + OFFSET_access_flags_in_ArtMethod);
+        int access_flags = getFlags(fromMethod);
         int old_flags = access_flags;
         access_flags |= kAccNative;
         if (SDKVersion >= __ANDROID_API_Q__) {
             // On API 29 whether to use the fast path or not is cached in the ART method structure
             access_flags &= ~kAccFastInterpreterToInterpreterInvoke;
         }
-        write32((char *) fromMethod + OFFSET_access_flags_in_ArtMethod, access_flags);
+        setFlags(fromMethod, access_flags);
         LOGI("change access flags from 0x%x to 0x%x", old_flags, access_flags);
     }
 
@@ -174,6 +185,8 @@ static int doBackupAndHook(void *targetMethod, void *hookMethod, void *backupMet
     if (backupMethod) {// do method backup
         // we use the same way as hooking target method
         // hook backup method and redirect back to the original target method
+        // the only difference is that the entry point is now hardcoded
+        // instead of reading from ArtMethod struct since it's overwritten
         res += replaceMethod(backupMethod, targetMethod, 1);
     }
 
