@@ -1,6 +1,8 @@
 YAHFA
 ----------------
 
+[![Build Status](https://travis-ci.com/PAGalaxyLab/YAHFA.svg?branch=master)](https://travis-ci.com/PAGalaxyLab/YAHFA)
+
 ## Introduction
 
 YAHFA is a hook framework for Android ART. It provides an efficient way for Java method hooking or replacement. Currently it supports:
