@@ -53,3 +53,12 @@ env:
         - ANDROID_SDK_ROOT=$ANDROID_HOME
         - TOOLS=${ANDROID_HOME}/tools
         - PATH=${ANDROID_HOME}:${ANDROID_HOME}/emulator:${TOOLS}:${TOOLS}/bin:${ANDROID_HOME}/platform-tools:${PATH}
+
+deploy:
+    provider: releases
+    skip_cleanup: true
+    apk_key:
+        secure: "QYdnNmrrRLSZlUXCeFobFoOsCeQYrkGoJETfFewQLIz3vmuy3Ti1V9touRiiRluAxRX79iLFEI+f/KnKE2Ow1U/7fMycT/7jZ5/P0QXJcC0RzScWfAFyHR0yBD6WOisRcZ7nQLjLeCNockjP+yl7+YRdXr+TFY+96JZ2ikb3vCODhOUlOEvZ7z81Hfv771qQHSVhX345KL2zUhib6v0jgK+2BLijQZ497dh2ENn6jmfAtJuxNtkr7rLkBRab4ZiLztpgzIDdfx/jIPVQmlccrSRc9WhUQ6XpV13465LVkJxM1w39EzOn2WOUIle1bZdWPWWLKngEw6QX/dEPrqtn4zt/r6dqWr1H6bELyiyNnfaHA0RTR1xU0dlou06GnXGaU8AzDDhnHPgYzNZLJJEBvysrJnABN//PY6rhb5zcxN7N/5B9OsRMJEz6yaLDpxGD1hYRIIyoa1F1tW5fsHj+ifJz47WbCk6m7EUWmqiUgmIr1PpcG8wmkNde12f+pTGlp7rZDU5hK23l58GzL+dy0NFEkegxB5K28r6NefbxV8SVXAqqwU6gIITg+tv/kBFvHKQWYZseRcsTsfafjyZWE+MDcIGMN+TLuVV3W+V6aNySOVA3A5HOLuHGuE1grix451TiENPbbcjroWDnO1ZmbKggvnjrwgq7w+HNYBt8blg="
+    file: library/build/outputs/aar/library-release.aar
+    on:
+        tags: true
