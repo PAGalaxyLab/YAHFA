@@ -11,7 +11,7 @@ android:
         - extra-google-m2repository
         - extra-android-support
 script:
-    - ./gradlew :library:build
+    - ./gradlew :library:build :library:publishReleasePublicationToMavenRepository
     #- ./gradlew :library:build :library:connectedCheck
 
 #licenses:
@@ -23,6 +23,7 @@ before_install:
     - echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
     - echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
     - echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+    - openssl aes-256-cbc -K $encrypted_729343b004dc_key -iv $encrypted_729343b004dc_iv -in $ENCRYPTED_GPG_KEY_LOCATION -out $GPG_KEY_LOCATION -d
     #- echo $ANDROID_HOME
     #- ls -l $ANDROID_HOME
     #- find $ANDROID_HOME/system-images
@@ -52,7 +53,12 @@ env:
         - ANDROID_ABI=x86
         - ANDROID_SDK_ROOT=$ANDROID_HOME
         - TOOLS=${ANDROID_HOME}/tools
-        - PATH=${ANDROID_HOME}:${ANDROID_HOME}/emulator:${TOOLS}:${TOOLS}/bin:${ANDROID_HOME}/platform-tools:${PATH}
+        - GPG_KEY_LOCATION="secret.gpg"
+        - ENCRYPTED_GPG_KEY_LOCATION="secret.gpg.enc"
+        - secure: "KbpgvCLxhleCaVsNf0HkfwK5Mwcn57c1xYR17iHcimy+UDjwcb99MlmBIJdV2Ydpjzr4yUAO70L8meUjVwkc/xc35d8j8J1QWZxFy6fxzezpgmYBDImGNUt1wUQUujvn7lN4MiZkCX2r9CXk25qi4EI9kqnNYBmF47rDbMLysYekhON17/GWNgUJGQaYPxj7J5EXSPXqBzPV5FNRaRroAXrvM6oKwo4JNe+JQD0U3AAgwXTRYRFzrG5YRE9TMO9eRHwvg4sVv6lELNeUR2Ey+ofmsSL8CMgUB6rKtLs2OmnEY69KILVm+yOUGp7uwgsxl6VQlU15FAt3ZNDehVFDluGeD/6jomg5dAwa5iDSMQHhYapQ/g/IR5PajvEWiaQAtvwz/kIIUB7ZPQs8IqVI/g9LucrL7rnvjzuqWrOOmN1kZvirjrBwJ7QruIsMLPU/MoT0kFgTubPTT0OWra8LbxrxQadADDsX6AO58Uu3npzFlmujXwJ+hodD7lk3fpWUTzPPShFNDJhl6Tun9sRcYZf+RPGAKOYL+h9k0MJIzAc6yY2Y2kJMpiCiUUbpctwet2V0PQ4wb2/Xif/UrlyZ+iWF097m056wnXKIhX0TWu3oPHlNYv9BO8IzolD2Sak48CZ/ui0MEENrj6Kj5/JeBjjYu1Dej9fVTxQDP1RERxc="
+        - secure: "Xtw5ZYYUvrJquizty8n/i3uhJHNY4bEFxkwPUpiiqqUqY8bQYV7cgJohZEe8M9Lbpnfd0z4vXT2oNTpqOUyuoDwmf2cZ3rUpLQpdXGtD3qjzth75Z64ldEklbe0FDmptD9/tCJ16+D+bfP4Z/83fOh3lJS+Idx5jy5c99l0+S+AA8XB+r1AMaidanbnBq4hVEzEGaeanHfykS4EXd5JX7qjaR8w2ATj6gCWocX2rOibocm3dLdu+BviG1UdR6jbSxFPhvQmkVlShbIlNf1B/qYQ1dzp82u444pkflFdB7nXAsrRDMC2o7FIrbO+uxPN+uO92HKDZqvUwPOvNRCDh91dxsjQ5Gr/kYOjAWUTPZUC5N9IlEUPyUSvlhMZMqyZS4fnrwhIygZuPcHNN9VSlqU98pdwNX1kh9v8cHNowKn1F+ELwI8sTAt2gPPHnoaGzMgDB6ZTAhQf6XJLxR1SMeUWvxTeLBsSacCE+yLfE9ZCKhmCDZ/X+zfJcx2FvRuWX5dcm9zEdhhiOLEWn7r9VECQpyjq2+MUw7yr8EATAD84RnH9sYG1lhV8adbw71jajiLpMHC7gQuqP24zQYV8XKARB/7wkYRaAPRS7j7d1PNsJKLXCmyVQM7L9CLiqFppvoYEUGu+iFYhBjGMwYsEScQXph0l/ILGacKmIaZbqwc0="
+        - secure: "ElHg0dsTeQb+9JYAp1HrboF9NIQ6BBAfOTxPbmVTlDB6k/jXP++cnTWIB1u1mCFRAvYg0E6jSpSbqV1U+QX+ULYmBhhyJ7kTbTqNec724lOfeaxPZWYEsOomi1rCFf4tSVvx5cJTfCQpaBjh7g8fPAySAJxg/GAwVZxTuEBu3kufB1FEp8C978C+oU2mCzoVeJAUaO6HEtWfK6LrMDvoCF+weZhd2QPop+J6pd/Of2TvwSaWSo28V1FpbnEpOVKZ85Od1gtEXjYdNRBcKUGki7oRAtLMugj3BmRuZSdBTVqw7bop+COug8Ixb4UpKChkzgtF+V6NTcQKgX7EIAk7xC9nYF3gIv48mMJeYHPYjgm9cvc3aVv3VhnCK+LJBS7g1MBpPghf2BvOOMB9Wm4Ro8lWIbNW18Cb+R7u+Wa4c9BRe0MKXlv5osDeHhQx0w/4+wQ4ixZw/T3Dew79eQhaTQMPLg+6lvYii27fPIwvtqkKFdCD8pqMRGgIvTJ/TVSfDAdEdExJ5vEuo+TRFvxewUftLUXnaK1LXtP8IYeGFPFnNeMDmg7JpPGCPA+wmsHIri4LIYRcwKgCWXiwoDoHDh2HpQIS/e+vrio62r4hNJhUslP88pU9MVyWiXKvkttOHQurjbvAaSVAtHNVXBQcM28VGlxyfWq0dTe4cbye18M="
+        - secure: "fu2zOHaapM0dx9pguhrG0Zzspq+DvmzhlClnK/l4B35muz8TlUxsMlXbOgEIMus8fAs++nlgSiaXEC4sK3Lm9edTdl1X27sROsO5TE9pmG9rRzmb4jleOqtARdEJrKhnkOSBoN2oFCExtgJ1GTCYjJK9xXIHNf5axE4z4W0ittCypGzDBI5FzCdSpGLBjmlRgZZZXJZgnT7paSMGURs1yeqVOdJl+QN2Kk+zR9ni5Nw08cKfw5138B4F/D9Yq88EMmR7TugnBi557xPOFSJ1EKXTloYOqmUHDnP7+mnGXGKClEg8ixpURF5J/iZP03cTtzxYG4uWTtKmKfU+0i68o1An6vPyuogVGVdxzwypgYz0G0vZvui02Gsh9bXtXtmUJAS9vrEBMi/FyO1IhrCWYeLHdN1BVLVk8jWUaTvmSuMelXHUAJOFIw75H5LACtDR1xse90qMpmFA3Pr+a8S6RrN49WOH4LMTgMTYhSZKdPcpCGXz4HxtJ8wBSIvUCjPx70QQX1dRXWD9o4E10ie5o03oSaHsjRqzoa4mYktf/8dBJYJMEwoHshKtzILsZIYJAEE71SwEdTI95ync8SKsJUCMMykIRVd9MTgq0SeLXs3fpYV+4ELRUDfHZJnP5YyvF2Zsq84DexrhLQpdtXkrw4ZJvTOs10ZtbTNgpRm5g2s="
 
 deploy:
     provider: releases
