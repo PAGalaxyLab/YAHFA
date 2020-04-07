@@ -2,7 +2,8 @@ YAHFA
 ----------------
 
 [![Build Status](https://travis-ci.com/PAGalaxyLab/YAHFA.svg?branch=master)](https://travis-ci.com/PAGalaxyLab/YAHFA)
-[![Download](https://img.shields.io/github/v/release/PAGalaxyLab/YAHFA.svg)](https://github.com/PAGalaxyLab/YAHFA/releases/latest/download/library-release.aar)
+[![Download](https://img.shields.io/github/v/release/PAGalaxyLab/YAHFA)](https://github.com/PAGalaxyLab/YAHFA/releases/latest/download/library-release.aar)
+[![Maven](https://img.shields.io/maven-central/v/io.github.pagalaxylab/yahfa)](https://repo1.maven.org/maven2/io/github/pagalaxylab/yahfa/)
 
 ## Introduction
 

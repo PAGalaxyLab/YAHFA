@@ -23,12 +23,15 @@ before_install:
     - echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
     - echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
     - echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
-    - openssl aes-256-cbc -K $encrypted_729343b004dc_key -iv $encrypted_729343b004dc_iv -in $ENCRYPTED_GPG_KEY_LOCATION -out $GPG_KEY_LOCATION -d
+    - openssl aes-256-cbc -K $encrypted_729343b004dc_key -iv $encrypted_729343b004dc_iv -in $ENCRYPTED_GPG_KEY_LOCATION -out library/$GPG_KEY_LOCATION -d
+    #- pwd
+    #- ls -l $GPG_KEY_LOCATION
     #- echo $ANDROID_HOME
     #- ls -l $ANDROID_HOME
     #- find $ANDROID_HOME/system-images
 
-#install:
+install:
+    - echo y | sdkmanager "ndk;20.0.5594570"
 #    - echo y | sdkmanager "system-images;$ANDROID_TARGET;default;$ANDROID_ABI"
 
 before_cache:
@@ -63,7 +66,7 @@ env:
 deploy:
     provider: releases
     skip_cleanup: true
-    apk_key:
+    api_key:
         secure: "QYdnNmrrRLSZlUXCeFobFoOsCeQYrkGoJETfFewQLIz3vmuy3Ti1V9touRiiRluAxRX79iLFEI+f/KnKE2Ow1U/7fMycT/7jZ5/P0QXJcC0RzScWfAFyHR0yBD6WOisRcZ7nQLjLeCNockjP+yl7+YRdXr+TFY+96JZ2ikb3vCODhOUlOEvZ7z81Hfv771qQHSVhX345KL2zUhib6v0jgK+2BLijQZ497dh2ENn6jmfAtJuxNtkr7rLkBRab4ZiLztpgzIDdfx/jIPVQmlccrSRc9WhUQ6XpV13465LVkJxM1w39EzOn2WOUIle1bZdWPWWLKngEw6QX/dEPrqtn4zt/r6dqWr1H6bELyiyNnfaHA0RTR1xU0dlou06GnXGaU8AzDDhnHPgYzNZLJJEBvysrJnABN//PY6rhb5zcxN7N/5B9OsRMJEz6yaLDpxGD1hYRIIyoa1F1tW5fsHj+ifJz47WbCk6m7EUWmqiUgmIr1PpcG8wmkNde12f+pTGlp7rZDU5hK23l58GzL+dy0NFEkegxB5K28r6NefbxV8SVXAqqwU6gIITg+tv/kBFvHKQWYZseRcsTsfafjyZWE+MDcIGMN+TLuVV3W+V6aNySOVA3A5HOLuHGuE1grix451TiENPbbcjroWDnO1ZmbKggvnjrwgq7w+HNYBt8blg="
     file: library/build/outputs/aar/library-release.aar
     on:
