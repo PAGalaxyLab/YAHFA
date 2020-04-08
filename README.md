@@ -2,8 +2,8 @@ YAHFA
 ----------------
 
 [![Build Status](https://travis-ci.com/PAGalaxyLab/YAHFA.svg?branch=master)](https://travis-ci.com/PAGalaxyLab/YAHFA)
-[![Download](https://img.shields.io/github/v/release/PAGalaxyLab/YAHFA)](https://github.com/PAGalaxyLab/YAHFA/releases/latest/download/library-release.aar)
-[![Maven](https://img.shields.io/maven-central/v/io.github.pagalaxylab/yahfa)](https://repo1.maven.org/maven2/io/github/pagalaxylab/yahfa/)
+[![Download](https://badgen.net/github/release/PAGalaxyLab/YAHFA)](https://github.com/PAGalaxyLab/YAHFA/releases/latest/download/library-release.aar)
+[![Maven](https://badgen.net/maven/v/maven-central/io.github.pagalaxylab/yahfa)](https://repo1.maven.org/maven2/io/github/pagalaxylab/yahfa/)
 
 ## Introduction
 
@@ -32,40 +32,43 @@ Please take a look at this [article](http://rk700.github.io/2017/03/30/YAHFA-int
 
 [更新说明](https://github.com/rk700/YAHFA/wiki/%E6%9B%B4%E6%96%B0%E8%AF%B4%E6%98%8E)
 
-## Build
+## Setup
 
-Import and build the project in Android Studio(__with Instant Run disabled__). There are three modules:
+Add Maven central repo in `build.gradle`:
 
-- `library`. This is the YAHFA library module, which compiles to `.aar` for use.
-- `demoApp`. This is a demo app which would load and apply the plugin.
-- `demoPlugin`. This is a demo plugin which contains the hooks and would be loaded by `demoApp`.
+```
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
 
-Please refer to [demoApp](https://github.com/rk700/YAHFA/tree/master/demoApp) and [demoPlugin](https://github.com/rk700/YAHFA/tree/master/demoPlugin) for more details on the demo.
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+```
+
+Then add YAHFA as a dependency:
+
+```
+dependencies {
+    implementation 'io.github.pagalaxylab:yahfa:0.10.0'
+}
+```
 
 ## Usage
 
-First please take a look at [demoPlugin](https://github.com/rk700/YAHFA/tree/master/demoPlugin) on how to create a hook plugin.
-
-To apply hooks, first create a new `DexClassLoader` which loads the plugin file:
+To hook a method:
 
 ```java
-DexClassLoader dexClassLoader = new DexClassLoader("/sdcard/demoPlugin-debug.apk",
-            getCodeCacheDir().getAbsolutePath(), null, classLoader);
+HookMain.backupAndHook(Method target, Method hook, Method backup);
 ```
 
-Then initalize `HookMain` and call `doHookDefault()`:
+where `backup` would be a placeholder for invoking the target method. Set `backup` to null or just use `HookMain.hook(Method target, Method hook)` if the original code is not needed.
 
-```java
-HookMain hookMain = new HookMain();
-hookMain.doHookDefault(dexClassLoader, classLoader);
-```
-
-You can also omit the default helper and call the following function instead:
-
-```java
-public void findAndBackupAndHook(Class targetClass, String methodName, String methodSig,
-                                 Method hook, Method backup);
-```
+Both `hook` and `backup` are static methods, and their parameters should match the ones of `target`. Please take a look at [demoPlugin](https://github.com/rk700/YAHFA/tree/master/demoPlugin) on how these methods are defined.
 
 ## Workaround for Method Inlining
 
