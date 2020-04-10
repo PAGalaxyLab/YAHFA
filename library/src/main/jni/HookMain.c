@@ -24,9 +24,10 @@ static int kAccCompileDontBother = 0x01000000;
 static int kAccFastInterpreterToInterpreterInvoke = 0x40000000;
 static size_t kDexCacheMethodCacheSize = 1024;
 
-void *libart = NULL;
-void *idManager = NULL;
-decodeMethodFunc decodeMethodID = NULL;
+//void *libart = NULL;
+//void *idManager = NULL;
+//decodeMethodFunc decodeMethodID = NULL;
+static jfieldID fieldArtMethod = NULL;
 
 
 static inline uint32_t read32(void *addr) {
@@ -47,18 +48,22 @@ static inline void *readAddr(void *addr) {
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
     int i;
     SDKVersion = sdkVersion;
+    jclass classExecutable;
     LOGI("init to SDK %d", sdkVersion);
     switch (sdkVersion) {
         case __ANDROID_API_R__:
-            libart = art_dlopen("libart.so", RTLD_LAZY);
-            LOGI("libart handle: %p", libart);
-            char *runtime_instance = readAddr(art_dlsym(libart, "_ZN3art7Runtime9instance_E"));
-            decodeMethodID = art_dlsym(libart, "_ZN3art3jni12JniIdManager14DecodeMethodIdEP10_jmethodID");
-#if defined(__i386__) || defined(__arm__)
-            idManager = readAddr(runtime_instance+0x11c);
-#else
-            idManager = readAddr(runtime_instance+0x1e8);
-#endif
+            classExecutable = (*env)->FindClass(env, "java/lang/reflect/Executable");
+            fieldArtMethod = (*env)->GetFieldID(env, classExecutable, "artMethod", "J");
+//            classHookMain = (*env)->FindClass()
+//            libart = art_dlopen("libart.so", RTLD_LAZY);
+//            LOGI("libart handle: %p", libart);
+//            char *runtime_instance = readAddr(art_dlsym(libart, "_ZN3art7Runtime9instance_E"));
+//            decodeMethodID = art_dlsym(libart, "_ZN3art3jni12JniIdManager14DecodeMethodIdEP10_jmethodID");
+//#if defined(__i386__) || defined(__arm__)
+//            idManager = readAddr(runtime_instance+0x11c);
+//#else
+//            idManager = readAddr(runtime_instance+0x1e8);
+//#endif
         case __ANDROID_API_Q__:
         case __ANDROID_API_P__:
             kAccCompileDontBother = 0x02000000;
@@ -278,14 +283,20 @@ static void ensureMethodCached(void *hookMethod, void *backupMethod) {
 }
 
 static void *getArtMethod(JNIEnv *env, jobject jmethod) {
-    if(jmethod == NULL) return NULL;
-    void *methodID = (void *) (*env)->FromReflectedMethod(env, jmethod);
-    if(((int)methodID) & 1 == 0) {
-        return methodID;
-    }
-    void *artMethod = (*decodeMethodID)(idManager, methodID);
+    void *artMethod = NULL;
 
-    LOGI("decode artmethod: method id %x, ArtMethod %p", methodID, artMethod);
+    if(jmethod == NULL) {
+        return artMethod;
+    }
+
+    if(SDKVersion == __ANDROID_API_R__) {
+        artMethod = (void *) (*env)->GetLongField(env, jmethod, fieldArtMethod);
+    }
+    else {
+        artMethod = (void *) (*env)->FromReflectedMethod(env, jmethod);
+    }
+
+    LOGI("ArtMethod: %p", artMethod);
     return artMethod;
 
 }

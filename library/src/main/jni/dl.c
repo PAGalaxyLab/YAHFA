@@ -18,7 +18,7 @@
 #define LIBNATIVELOADER "/apex/com.android.art/lib64/libnativeloader.so"
 #endif
 
-static void init() __attribute__((constructor));
+//static void init() __attribute__((constructor));
 
 typedef void * (*dlopenFunc)(const char *name, int flags, const void *caller_addr);
 typedef void * (*dlsymFunc)(void* handle, const char* symbol, const void* caller_addr);

@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 public class HookMain {
     private static final String TAG = "YAHFA";
-    
+
     static {
         System.loadLibrary("yahfa");
         if(android.os.Build.VERSION.PREVIEW_SDK_INT != 0) {
