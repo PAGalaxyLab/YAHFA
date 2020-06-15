@@ -7,8 +7,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Created by liuruikai756 on 28/03/2017.
@@ -16,7 +14,7 @@ import java.util.List;
 
 public class HookMain {
     private static final String TAG = "YAHFA";
-    
+
     static {
         System.loadLibrary("yahfa");
         init(android.os.Build.VERSION.SDK_INT);
