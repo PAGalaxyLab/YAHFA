@@ -6,16 +6,14 @@
 #include "common.h"
 #include "trampoline.h"
 
-typedef void *(*decodeMethodFunc)(void *, void *);
-
 int SDKVersion;
-static int OFFSET_entry_point_from_interpreter_in_ArtMethod;
-static int OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
-static int OFFSET_ArtMehod_in_Object;
-static int OFFSET_access_flags_in_ArtMethod;
-static int kAccNative = 0x0100;
-static int kAccCompileDontBother = 0x01000000;
-static int kAccFastInterpreterToInterpreterInvoke = 0x40000000;
+static uint32_t OFFSET_entry_point_from_interpreter_in_ArtMethod;
+static uint32_t OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
+static uint32_t OFFSET_ArtMehod_in_Object;
+static uint32_t OFFSET_access_flags_in_ArtMethod;
+static uint32_t kAccNative = 0x0100;
+static uint32_t kAccCompileDontBother = 0x01000000;
+static uint32_t kAccFastInterpreterToInterpreterInvoke = 0x40000000;
 
 static jfieldID fieldArtMethod = NULL;
 
@@ -40,7 +38,6 @@ static inline void writeAddr(void *addr, void *value) {
 #endif
 
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
-    int i;
     SDKVersion = sdkVersion;
     jclass classExecutable;
     LOGI("init to SDK %d", sdkVersion);
@@ -113,8 +110,8 @@ static void setNonCompilable(void *method) {
     if (SDKVersion < __ANDROID_API_N__) {
         return;
     }
-    int access_flags = getFlags(method);
-    int old_flags = access_flags;
+    uint32_t access_flags = getFlags(method);
+    uint32_t old_flags = access_flags;
     access_flags |= kAccCompileDontBother;
     setFlags(method, access_flags);
     LOGI("setNonCompilable: change access flags from 0x%x to 0x%x", old_flags, access_flags);
@@ -165,8 +162,8 @@ static int replaceMethod(void *fromMethod, void *toMethod, int isBackup) {
 
     // set the target method to native so that Android O wouldn't invoke it with interpreter
     if (SDKVersion >= __ANDROID_API_O__) {
-        int access_flags = getFlags(fromMethod);
-        int old_flags = access_flags;
+        uint32_t access_flags = getFlags(fromMethod);
+        uint32_t old_flags = access_flags;
         access_flags |= kAccNative;
         if (SDKVersion >= __ANDROID_API_Q__) {
             // On API 29 whether to use the fast path or not is cached in the ART method structure
