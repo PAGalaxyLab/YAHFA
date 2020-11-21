@@ -162,13 +162,16 @@ static int replaceMethod(void *fromMethod, void *toMethod, int isBackup) {
     }
 
     // set the target method to native so that Android O wouldn't invoke it with interpreter
-    if (SDKVersion >= __ANDROID_API_O__) {
+    if(SDKVersion >= __ANDROID_API_O__) {
         int access_flags = getFlags(fromMethod);
         int old_flags = access_flags;
-        access_flags |= kAccNative;
         if (SDKVersion >= __ANDROID_API_Q__) {
             // On API 29 whether to use the fast path or not is cached in the ART method structure
             access_flags &= ~kAccFastInterpreterToInterpreterInvoke;
+        } else {
+            // We don't set kAccNative on R+ because they will try to load from real native method pointer instead of entry_point_from_quick_compiled_code_.
+            // Ref: https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:art/runtime/art_method.h;l=844;bpv=1;bpt=1
+            access_flags |= kAccNative;
         }
         setFlags(fromMethod, access_flags);
         LOGI("change access flags from 0x%x to 0x%x", old_flags, access_flags);
