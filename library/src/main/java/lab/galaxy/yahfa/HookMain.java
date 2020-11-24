@@ -7,13 +7,21 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.lang.reflect.Member;
 
 /**
  * Created by liuruikai756 on 28/03/2017.
  */
 
 public class HookMain {
-    private static final String TAG = "YAHFA";
+    private static final String TAG = HookMain.class.getSimpleName();
+    // isDebugModeEnabledR = BuildConfig.DEBUG;
+    // Ref: http://aosp.opersys.com/xref/android-11.0.0_r17/xref/art/runtime/art_method.cc
+    public static Boolean isDebugModeEnabledR = Boolean.FALSE;
+    public static void setDebugEnabledR(Boolean b)
+    {
+        isDebugModeEnabledR = b;
+    }
 
     static {
         System.loadLibrary("yahfa");
@@ -86,6 +94,12 @@ public class HookMain {
         if (target == null) {
             throw new IllegalArgumentException("null target method");
         }
+        
+        if(target instanceof Member && Modifier.isStatic(((Member)target).getModifiers()) && isDebugModeEnabledR)
+        {
+            throw new IllegalArgumentException("Debug enabled.");
+        }
+        
         if (hook == null) {
             throw new IllegalArgumentException("null hook method");
         }
