@@ -29,6 +29,7 @@ unsigned int hookCount = 0;
 // ff 70 20 ; push DWORD PTR [eax + 0x20]
 // c3 ; ret
 unsigned char trampoline[] = {
+        0x00, 0x00, 0x00, 0x00, // code_size_ in OatQuickMethodHeader
         0xb8, 0x78, 0x56, 0x34, 0x12,
         0xff, 0x70, 0x20,
         0xc3
@@ -48,6 +49,7 @@ unsigned char trampolineForBackup[] = {
 // ff 77 20 ; push QWORD PTR [rdi + 0x20]
 // c3 ; ret
 unsigned char trampoline[] = {
+    0x00, 0x00, 0x00, 0x00, // code_size_ in OatQuickMethodHeader
     0x48, 0xbf, 0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12,
     0xff, 0x77, 0x20,
     0xc3
@@ -69,6 +71,7 @@ unsigned char trampolineForBackup[] = {
 // 20 F0 90 E5 ; ldr pc, [r0, 0x20]
 // 78 56 34 12 ; 0x12345678 (addr of the hook method)
 unsigned char trampoline[] = {
+        0x00, 0x00, 0x00, 0x00, // code_size_ in OatQuickMethodHeader
         0x00, 0x00, 0x9f, 0xe5,
         0x20, 0xf0, 0x90, 0xe5,
         0x78, 0x56, 0x34, 0x12
@@ -96,6 +99,7 @@ unsigned char trampolineForBackup[] = {
 // 78 56 34 12
 // 89 67 45 23 ; 0x2345678912345678 (addr of the hook method)
 unsigned char trampoline[] = {
+        0x00, 0x00, 0x00, 0x00, // code_size_ in OatQuickMethodHeader
         0x60, 0x00, 0x00, 0x58,
         0x10, 0x00, 0x40, 0xf8,
         0x00, 0x02, 0x1f, 0xd6,
@@ -140,7 +144,7 @@ void *genTrampoline(void *toMethod, void *entrypoint) {
         memcpy(targetAddr + 6, &entrypoint, pointer_size);
     }
     else {
-        memcpy(targetAddr + 1, &toMethod, pointer_size);
+        memcpy(targetAddr + 5, &toMethod, pointer_size);
     }
 
 #elif defined(__x86_64__)
@@ -149,7 +153,7 @@ void *genTrampoline(void *toMethod, void *entrypoint) {
         memcpy(targetAddr + 13, &toMethod, pointer_size);
     }
     else {
-        memcpy(targetAddr + 2, &toMethod, pointer_size);
+        memcpy(targetAddr + 7, &toMethod, pointer_size);
     }
 
 #elif defined(__arm__)
@@ -158,7 +162,7 @@ void *genTrampoline(void *toMethod, void *entrypoint) {
         memcpy(targetAddr + 16, &toMethod, pointer_size);
     }
     else {
-        memcpy(targetAddr + 8, &toMethod, pointer_size);
+        memcpy(targetAddr + 12, &toMethod, pointer_size);
     }
 
 #elif defined(__aarch64__)
@@ -167,7 +171,7 @@ void *genTrampoline(void *toMethod, void *entrypoint) {
         memcpy(targetAddr + 12, &toMethod, pointer_size);
     }
     else {
-        memcpy(targetAddr + 12, &toMethod, pointer_size);
+        memcpy(targetAddr + 16, &toMethod, pointer_size);
     }
 
 #else
@@ -179,14 +183,14 @@ void *genTrampoline(void *toMethod, void *entrypoint) {
 
 void setupTrampoline(uint8_t offset) {
 #if defined(__i386__)
-    trampoline[7] = offset;
+    trampoline[11] = offset;
 #elif defined(__x86_64__)
-    trampoline[12] = offset;
+    trampoline[16] = offset;
 #elif defined(__arm__)
-    trampoline[4] = offset;
+    trampoline[8] = offset;
 #elif defined(__aarch64__)
-    trampoline[5] |= offset << 4;
-    trampoline[6] |= offset >> 4;
+    trampoline[9] |= offset << 4;
+    trampoline[10] |= offset >> 4;
 #else
 #error Unsupported architecture
 #endif
