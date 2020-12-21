@@ -119,15 +119,6 @@ static void setNonCompilable(void *method) {
 }
 
 static int replaceMethod(void *fromMethod, void *toMethod, int isBackup) {
-    if (hookCount >= hookCap) {
-        LOGI("not enough capacity. Allocating...");
-        if (doInitHookCap(DEFAULT_CAP)) {
-            LOGE("cannot hook method");
-            return 1;
-        }
-        LOGI("Allocating done");
-    }
-
     LOGI("replace method from %p to %p", fromMethod, toMethod);
 
     // replace entry point
@@ -177,7 +168,6 @@ static int replaceMethod(void *fromMethod, void *toMethod, int isBackup) {
         LOGI("change access flags from 0x%x to 0x%x", old_flags, access_flags);
     }
 
-    hookCount += 1;
     return 0;
 
 }
