@@ -1,7 +1,5 @@
 plugins {
     id 'com.android.library'
-    id 'maven-publish'
-    id 'signing'
 }
 
 android {
@@ -46,77 +44,5 @@ dependencies {
     implementation 'io.github.rk700:dlfunc:0.1.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0-alpha4'
-}
-
-afterEvaluate {
-    publishing {
-        publications {
-            // Creates a Maven publication called "release".
-            release(MavenPublication) {
-                // Applies the component for the release build variant.
-                from components.release
-
-                // You can then customize attributes of the publication as shown below.
-                groupId = 'io.github.pagalaxylab'
-                artifactId = 'yahfa'
-                version = '0.10.0'
-
-                pom {
-                    name = 'YAHFA'
-                    description = 'Yet Another Hook Framework for ART'
-                    url = 'https://github.com/PAGalaxyLab/YAHFA'
-                    licenses {
-                        license {
-                            name = 'GPLv3'
-                            url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
-                        }
-                    }
-                    developers {
-                        developer {
-                            id = 'rk700'
-                            name = 'Ruikai Liu'
-                        }
-                    }
-                    scm {
-                        connection = 'scm:git@github.com:PAGalaxyLab/YAHFA.git'
-                        developerConnection = 'scm:git@github.com:PAGalaxyLab/YAHFA.git'
-                        url = 'https://github.com/PAGalaxyLab/YAHFA'
-                    }
-                }
-            }
-        }
-
-        repositories {
-            maven {
-
-                if (project.version.endsWith("-SNAPSHOT")) {
-                    url "https://oss.sonatype.org/content/repositories/snapshots"
-                } else {
-                    url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-                }
-
-                credentials {
-                    username System.getenv('SONATYPE_USERNAME')
-                    password System.getenv('SONATYPE_PASSWORD')
-                }
-
-            }
-        }
-    }
-
-    signing {
-        sign publishing.publications.release
-    }
-}
-
-
-gradle.taskGraph.whenReady { taskGraph ->
-    if (taskGraph.allTasks.any { it instanceof Sign }) {
-        allprojects {
-            ext."signing.keyId" = System.getenv('GPG_KEY_ID')
-            ext."signing.secretKeyRingFile" = System.getenv('GPG_KEY_LOCATION')
-            ext."signing.password" = System.getenv('GPG_PASSPHRASE')
-        }
-    }
 }
 

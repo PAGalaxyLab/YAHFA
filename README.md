@@ -1,7 +1,7 @@
 YAHFA
 ----------------
 
-[![Build Status](https://travis-ci.com/PAGalaxyLab/YAHFA.svg?branch=master)](https://travis-ci.com/PAGalaxyLab/YAHFA)
+[![Build Status](https://github.com/PAGalaxyLab/YAHFA/workflows/ci/badge.svg)](https://github.com/PAGalaxyLab/YAHFA/actions)
 [![Download](https://badgen.net/github/release/PAGalaxyLab/YAHFA)](https://github.com/PAGalaxyLab/YAHFA/releases/latest/download/library-release.aar)
 [![Maven](https://badgen.net/maven/v/maven-central/io.github.pagalaxylab/yahfa)](https://repo1.maven.org/maven2/io/github/pagalaxylab/yahfa/)
 
@@ -9,15 +9,18 @@ YAHFA
 
 YAHFA is a hook framework for Android ART. It provides an efficient way for Java method hooking or replacement. Currently it supports:
 
-- Android 5.0(API 21)
-- Android 5.1(API 22)
-- Android 6.0(API 23)
+- ~~Android 5.0(API 21)~~
+- ~~Android 5.1(API 22)~~
+- ~~Android 6.0(API 23)~~
 - Android 7.0(API 24)
 - Android 7.1(API 25)
 - Android 8.0(API 26)
 - Android 8.1(API 27)
 - Android 9.0(API 28)
 - Android 10.0(API 29)
+- Android R(API 30)
+
+(Support for version <= 6.0 is broken after commit 9824bdd9d958fd0eca43537b6288bb04da191036)
 
 with ABI:
 
@@ -57,6 +60,8 @@ dependencies {
     implementation 'io.github.pagalaxylab:yahfa:0.10.0'
 }
 ```
+
+YAHFA depends on [dlfunc](https://github.com/rk700/dlfunc) after commit 5b60df8af85fab2b4901cf881c7e9362010c0472 for calling `MakeInitializedClassesVisiblyInitialized` explicitly on Android R, and Android Gradle Plugin version 4.1+ is required for that native library dependency.
 
 ## Usage
 
