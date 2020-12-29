@@ -20,7 +20,7 @@ static jfieldID fieldArtMethod = NULL;
 
 static uint32_t OFFSET_classlinker_in_Runtime;
 static char *classLinker = NULL;
-typedef void (*InitClassFunc)(void *, int);
+typedef void (*InitClassFunc)(void *, void *, int);
 static InitClassFunc MakeInitializedClassesVisiblyInitialized = NULL;
 static int shouldVisiblyInit();
 static int findInitClassSymbols(JNIEnv *env);
@@ -126,7 +126,7 @@ jint Java_lab_galaxy_yahfa_HookMain_00024Utils_visiblyInit(JNIEnv *env, jclass c
         }
     }
 
-    MakeInitializedClassesVisiblyInitialized((void *)thread, 1);
+    MakeInitializedClassesVisiblyInitialized(classLinker, (void *)thread, 1);
     return 0;
 }
 
