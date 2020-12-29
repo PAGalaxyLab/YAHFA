@@ -5,9 +5,7 @@
 #ifndef YAHFA_TAMPOLINE_H
 #define YAHFA_TAMPOLINE_H
 
-extern int SDKVersion;
-
-void setupTrampoline(uint8_t offset);
+void setupTrampoline(unsigned char offset);
 
 void *genTrampoline(void *toMethod, void *entrypoint);
 

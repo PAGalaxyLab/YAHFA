@@ -71,6 +71,13 @@ public class HookMain {
                 Log.e(TAG, "Cannot find hook for " + methodName);
                 return;
             }
+
+            // has to visibly init the classes
+            // see the comment for function Utils.initClass()
+            if(Utils.initClass() != 0) {
+                Log.e(TAG, "Utils.initClass failed");
+            }
+
             findAndBackupAndHook(clazz, methodName, methodSig, hook, backup);
         } catch (Exception e) {
             e.printStackTrace();
@@ -114,6 +121,12 @@ public class HookMain {
             }
             // backup is just a placeholder and the constraint could be less strict
             checkCompatibleMethods(target, backup, "Original", "Backup");
+        }
+
+        // has to visibly init the classes
+        // see the comment for function Utils.initClass()
+        if(Utils.initClass() != 0) {
+            Log.e(TAG, "Utils.initClass failed");
         }
 
         if (!backupAndHookNative(target, hook, backup)) {
@@ -184,4 +197,24 @@ public class HookMain {
     public static native Object findMethodNative(Class targetClass, String methodName, String methodSig);
 
     private static native void init(int sdkVersion);
+
+    public static class Utils {
+        // https://github.com/PAGalaxyLab/YAHFA/pull/133#issuecomment-743728607
+        // class may be visible initialized after it's initialized after Android R
+        // so we have to call MakeInitializedClassesVisiblyInitialized explicitly before hooking
+        public static int initClass() {
+            // do nothing before Android R or on x86 devices
+            if(shouldVisiblyInit()) {
+                long thread = getThread();
+                return visiblyInit(thread);
+            }
+            else {
+                return 0;
+            }
+        }
+
+        private static native boolean shouldVisiblyInit();
+        private static native int visiblyInit(long thread);
+        private static native long getThread();
+    }
 }

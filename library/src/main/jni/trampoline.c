@@ -9,11 +9,6 @@
 #include "common.h"
 #include "trampoline.h"
 
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-
-static unsigned char *trampolineCode; // place where trampolines are saved
-static unsigned int trampolineSize; // trampoline size required for each hook
-
 static unsigned char *currentTrampolineOff = 0;
 static unsigned char *trampolineSpaceEnd = 0;
 

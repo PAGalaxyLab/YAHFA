@@ -13,15 +13,37 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-    externalNativeBuild {
-        ndkBuild {
-            path 'src/main/jni/Android.mk'
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=none"
+            }
         }
     }
+    externalNativeBuild {
+        cmake {
+            path 'CMakeLists.txt'
+        }
+    }
+    buildFeatures {
+        prefab true
+    }
+
+    packagingOptions {
+        exclude "**/libdlfunc.so"
+    }
+
+//    testOptions {
+//        unitTests {
+//            packagingOptions {
+//                pickFirst "**/libdlfunc.so"
+//            }
+//        }
+//    }
 }
 
 dependencies {
+    implementation 'io.github.rk700:dlfunc:0.1.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0-alpha4'
 }
