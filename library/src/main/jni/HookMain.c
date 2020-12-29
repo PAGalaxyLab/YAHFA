@@ -52,24 +52,28 @@ static int findInitClassSymbols(JNIEnv *env) {
         return 1;
     }
     else {
-        void **runtime_bss = dlfunc_dlsym(env, handle, "_ZN3art7Runtime9instance_E");
+        void *runtime_bss = dlfunc_dlsym(env, handle, "_ZN3art7Runtime9instance_E");
         if(!runtime_bss) {
             LOGE("failed to find Runtime::instance symbol");
             return 1;
         }
-        char *runtime = *runtime_bss;
+        char *runtime = readAddr(runtime_bss);
         if(!runtime) {
             LOGE("Runtime::instance value is NULL");
             return 1;
         }
-        classLinker = runtime + OFFSET_classlinker_in_Runtime;
+        LOGI("runtime bss is at %p, runtime instance is at %p", runtime_bss, runtime);
+        classLinker = readAddr(runtime + OFFSET_classlinker_in_Runtime);
+        LOGI("classLinker is at %p, value %p", runtime + OFFSET_classlinker_in_Runtime, classLinker);
 
-        MakeInitializedClassesVisiblyInitialized =
-                dlfunc_dlsym(env, handle, "_ZN3art11ClassLinker40MakeInitializedClassesVisiblyInitializedEPNS_6ThreadEb");
+        MakeInitializedClassesVisiblyInitialized = dlfunc_dlsym(env, handle,
+              "_ZN3art11ClassLinker40MakeInitializedClassesVisiblyInitializedEPNS_6ThreadEb");
         if(!MakeInitializedClassesVisiblyInitialized) {
             LOGE("failed to find MakeInitializedClassesVisiblyInitialized symbol");
             return 1;
         }
+        LOGI("MakeInitializedClassesVisiblyInitialized is at %p",
+                MakeInitializedClassesVisiblyInitialized);
     }
     return 0;
 }
@@ -126,6 +130,7 @@ jint Java_lab_galaxy_yahfa_HookMain_00024Utils_visiblyInit(JNIEnv *env, jclass c
         }
     }
 
+    LOGI("thread is at %p", thread);
     MakeInitializedClassesVisiblyInitialized(classLinker, (void *)thread, 1);
     return 0;
 }
