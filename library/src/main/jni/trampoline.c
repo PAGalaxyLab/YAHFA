@@ -162,7 +162,7 @@ void *genTrampoline(void *toMethod, void *entrypoint) {
         memcpy(targetAddr + 13, &toMethod, pointer_size);
     }
     else {
-        memcpy(targetAddr + 7, &toMethod, pointer_size);
+        memcpy(targetAddr + 6, &toMethod, pointer_size);
     }
 
 #elif defined(__arm__)
