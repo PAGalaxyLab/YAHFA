@@ -15,13 +15,15 @@ import java.lang.reflect.Member;
 
 public class HookMain {
     private static final String TAG = HookMain.class.getSimpleName();
+    // MakeInitializedClassesVisiblyInitialized is called explicitly
+    // entry of jni methods would not be set to jni trampoline after hooked
     // isDebugModeEnabledR = BuildConfig.DEBUG;
     // Ref: http://aosp.opersys.com/xref/android-11.0.0_r17/xref/art/runtime/art_method.cc
-    public static Boolean isDebugModeEnabledR = Boolean.FALSE;
-    public static void setDebugEnabledR(Boolean b)
-    {
-        isDebugModeEnabledR = b;
-    }
+//    public static Boolean isDebugModeEnabledR = Boolean.FALSE;
+//    public static void setDebugEnabledR(Boolean b)
+//    {
+//        isDebugModeEnabledR = b;
+//    }
 
     static {
         System.loadLibrary("yahfa");
@@ -102,10 +104,10 @@ public class HookMain {
             throw new IllegalArgumentException("null target method");
         }
         
-        if(target instanceof Member && Modifier.isStatic(((Member)target).getModifiers()) && isDebugModeEnabledR)
-        {
-            throw new IllegalArgumentException("Debug enabled.");
-        }
+//        if(target instanceof Member && Modifier.isStatic(((Member)target).getModifiers()) && isDebugModeEnabledR)
+//        {
+//            throw new IllegalArgumentException("Debug enabled.");
+//        }
         
         if (hook == null) {
             throw new IllegalArgumentException("null hook method");
