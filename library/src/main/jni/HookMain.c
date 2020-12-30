@@ -1,13 +1,10 @@
 #include <jni.h>
-#include <sys/mman.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 
 #include "common.h"
 #include "trampoline.h"
-#include "dlfunc.h"
 
-static int SDKVersion;
+int SDKVersion;
 static uint32_t OFFSET_entry_point_from_interpreter_in_ArtMethod;
 static uint32_t OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod;
 static uint32_t OFFSET_ArtMehod_in_Object;
@@ -18,123 +15,6 @@ static uint32_t kAccFastInterpreterToInterpreterInvoke = 0x40000000;
 
 static jfieldID fieldArtMethod = NULL;
 
-static uint32_t OFFSET_classlinker_in_Runtime;
-static char *classLinker = NULL;
-typedef void (*InitClassFunc)(void *, void *, int);
-static InitClassFunc MakeInitializedClassesVisiblyInitialized = NULL;
-static int shouldVisiblyInit();
-static int findInitClassSymbols(JNIEnv *env);
-
-static inline uint32_t read32(void *addr) {
-    return *((uint32_t *) addr);
-}
-
-static inline void write32(void *addr, uint32_t value) {
-    *((uint32_t *) addr) = value;
-}
-
-static inline void *readAddr(void *addr) {
-    return *((void **) addr);
-}
-
-static inline void writeAddr(void *addr, void *value) {
-    *((void **)addr) = value;
-}
-
-static int findInitClassSymbols(JNIEnv *env) {
-    if(dlfunc_init(env) != JNI_OK) {
-        LOGE("dlfunc init failed");
-        return 1;
-    }
-    void *handle = dlfunc_dlopen(env, "libart.so", RTLD_LAZY);
-    if(handle == NULL) {
-        LOGE("failed to find libart.so handle");
-        return 1;
-    }
-    else {
-        void *runtime_bss = dlfunc_dlsym(env, handle, "_ZN3art7Runtime9instance_E");
-        if(!runtime_bss) {
-            LOGE("failed to find Runtime::instance symbol");
-            return 1;
-        }
-        char *runtime = readAddr(runtime_bss);
-        if(!runtime) {
-            LOGE("Runtime::instance value is NULL");
-            return 1;
-        }
-        LOGI("runtime bss is at %p, runtime instance is at %p", runtime_bss, runtime);
-        classLinker = readAddr(runtime + OFFSET_classlinker_in_Runtime);
-        LOGI("classLinker is at %p, value %p", runtime + OFFSET_classlinker_in_Runtime, classLinker);
-
-        MakeInitializedClassesVisiblyInitialized = dlfunc_dlsym(env, handle,
-              "_ZN3art11ClassLinker40MakeInitializedClassesVisiblyInitializedEPNS_6ThreadEb");
-        if(!MakeInitializedClassesVisiblyInitialized) {
-            LOGE("failed to find MakeInitializedClassesVisiblyInitialized symbol");
-            return 1;
-        }
-        LOGI("MakeInitializedClassesVisiblyInitialized is at %p",
-                MakeInitializedClassesVisiblyInitialized);
-    }
-    return 0;
-}
-
-jlong __attribute__((naked)) Java_lab_galaxy_yahfa_HookMain_00024Utils_getThread(JNIEnv *env, jclass clazz) {
-#if defined(__aarch64__)
-    __asm__(
-            "mov x0, x19\n"
-            "ret\n"
-            );
-#elif defined(__arm__)
-    __asm__(
-            "mov r0, r9\n"
-            "bx lr\n"
-            );
-#elif defined(__x86_64__)
-    __asm__(
-            "mov %gs:0xe8, %rax\n" // offset on Android R
-            "ret\n"
-            );
-#elif defined(__i386__)
-    __asm__(
-            "mov %fs:0xc4, %eax\n" // offset on Android R
-            "ret\n"
-            );
-#endif
-}
-
-static int shouldVisiblyInit() {
-#if defined(__i386__) || defined(__x86_64__)
-    return 0;
-#else
-    if(SDKVersion < __ANDROID_API_R__) {
-        return 0;
-    }
-    else return 1;
-#endif
-}
-
-jboolean Java_lab_galaxy_yahfa_HookMain_00024Utils_shouldVisiblyInit(JNIEnv *env, jclass clazz) {
-    return shouldVisiblyInit() != 0;
-}
-
-jint Java_lab_galaxy_yahfa_HookMain_00024Utils_visiblyInit(JNIEnv *env, jclass clazz, jlong thread) {
-    if(!shouldVisiblyInit()) {
-        return 0;
-    }
-
-    if(!classLinker || !MakeInitializedClassesVisiblyInitialized) {
-        if(findInitClassSymbols(env) != 0) {
-            LOGE("failed to find symbols: classLinker %p, MakeInitializedClassesVisiblyInitialized %p",
-                    classLinker, MakeInitializedClassesVisiblyInitialized);
-            return 1;
-        }
-    }
-
-    LOGI("thread is at %p", thread);
-    MakeInitializedClassesVisiblyInitialized(classLinker, (void *)thread, 1);
-    return 0;
-}
-
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
     SDKVersion = sdkVersion;
     jclass classExecutable;
@@ -143,11 +23,6 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
         case __ANDROID_API_R__:
             classExecutable = (*env)->FindClass(env, "java/lang/reflect/Executable");
             fieldArtMethod = (*env)->GetFieldID(env, classExecutable, "artMethod", "J");
-#if defined(__x86_64__) || defined(__aarch64__)
-            OFFSET_classlinker_in_Runtime = 472;
-#else
-            OFFSET_classlinker_in_Runtime = 276;
-#endif
         case __ANDROID_API_Q__:
         case __ANDROID_API_P__:
             kAccCompileDontBother = 0x02000000;

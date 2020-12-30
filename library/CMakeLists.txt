@@ -28,6 +28,7 @@ add_library( # Specifies the name of the library.
              # Provides a relative path to your source file(s).
              src/main/jni/HookMain.c 
              src/main/jni/trampoline.c
+             src/main/jni/utils.c
 )
 
 find_package(dlfunc REQUIRED CONFIG)
