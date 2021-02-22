@@ -8,6 +8,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.lang.reflect.Member;
+import android.os.Build;
 
 /**
  * Created by liuruikai756 on 28/03/2017.
@@ -27,7 +28,17 @@ public class HookMain {
 
     static {
         System.loadLibrary("yahfa");
-        init(android.os.Build.VERSION.SDK_INT);
+        // Android SDK Ver
+        int buildSdk = Build.VERSION.SDK_INT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                if(Build.VERSION.PREVIEW_SDK_INT > 0)
+                    buildSdk += 1;
+            } catch (Throwable e) {
+                // ignore
+            }
+        }
+        init(buildSdk);
     }
 
     public static void doHookDefault(ClassLoader patchClassLoader, ClassLoader originClassLoader) {
