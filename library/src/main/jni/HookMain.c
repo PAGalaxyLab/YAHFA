@@ -202,7 +202,7 @@ static void *getArtMethod(JNIEnv *env, jobject jmethod) {
         return artMethod;
     }
 
-    if(SDKVersion == __ANDROID_API_R__) {
+    if(SDKVersion >= __ANDROID_API_R__) {
         artMethod = (void *) (*env)->GetLongField(env, jmethod, fieldArtMethod);
     }
     else {
