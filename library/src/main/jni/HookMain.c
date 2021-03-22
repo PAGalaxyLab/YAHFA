@@ -12,6 +12,7 @@ static uint32_t OFFSET_access_flags_in_ArtMethod;
 static uint32_t kAccNative = 0x0100;
 static uint32_t kAccCompileDontBother = 0x01000000;
 static uint32_t kAccFastInterpreterToInterpreterInvoke = 0x40000000;
+static uint32_t kAccPreCompiled = 0x00200000;
 
 static jfieldID fieldArtMethod = NULL;
 
@@ -106,6 +107,9 @@ static void setNonCompilable(void *method) {
     uint32_t access_flags = getFlags(method);
     uint32_t old_flags = access_flags;
     access_flags |= kAccCompileDontBother;
+    if (SDKVersion >= __ANDROID_API_R__) {
+        access_flags &= ~kAccPreCompiled;
+    }
     setFlags(method, access_flags);
     LOGI("setNonCompilable: change access flags from 0x%x to 0x%x", old_flags, access_flags);
 
