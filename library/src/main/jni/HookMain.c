@@ -27,6 +27,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
     LOGI("init to SDK %d", sdkVersion);
     switch (sdkVersion) {
         case __ANDROID_API_S__:
+            kAccPreCompiled = 0x00800000;
         case __ANDROID_API_R__:
             classExecutable = (*env)->FindClass(env, "java/lang/reflect/Executable");
             fieldArtMethod = (*env)->GetFieldID(env, classExecutable, "artMethod", "J");
