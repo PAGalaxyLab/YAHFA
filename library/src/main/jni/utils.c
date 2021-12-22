@@ -84,7 +84,7 @@ jlong __attribute__((naked)) Java_lab_galaxy_yahfa_HookMain_00024Utils_getThread
 
 static int shouldVisiblyInit() {
 #if defined(__i386__) || defined(__x86_64__)
-    return 1;
+    return 0;
 #else
     if(SDKVersion < __ANDROID_API_R__) {
         return 0;
