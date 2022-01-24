@@ -14,6 +14,14 @@ static int findInitClassSymbols(JNIEnv *env);
 
 static int findInitClassSymbols(JNIEnv *env) {
     int OFFSET_classlinker_in_Runtime;
+    
+    // Android S
+    if (SDKVersion == 31) {
+#if defined(__x86_64__) || defined(__aarch64__)
+        OFFSET_classlinker_in_Runtime = 496;
+#endif
+    }
+    
     if(SDKVersion == __ANDROID_API_R__) {
 #if defined(__x86_64__) || defined(__aarch64__)
         OFFSET_classlinker_in_Runtime = 472;
