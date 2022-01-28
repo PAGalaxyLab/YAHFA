@@ -11,6 +11,8 @@ jobs:
         with: 
           java-version: 1.8
       - name: build
-        run: ./gradlew :library:build --stacktrace
+         run: ./gradlew :library:build --stacktrace
+      - name: Microsoft C++ Code Analysis Action
+        uses: microsoft/msvc-code-analysis-action@v0.1.0
 
 
