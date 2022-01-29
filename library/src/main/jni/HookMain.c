@@ -12,10 +12,15 @@ static uint32_t OFFSET_access_flags_in_ArtMethod;
 static uint32_t kAccNative = 0x0100;
 static uint32_t kAccCompileDontBother = 0x01000000;
 static uint32_t kAccFastInterpreterToInterpreterInvoke = 0x40000000;
+static uint32_t kAccPreCompiled = 0x00200000;
 
 static jfieldID fieldArtMethod = NULL;
 
 // Android 12+
+#ifndef __ANDROID_API_S_L__
+#define __ANDROID_API_S_L__ 32
+#endif
+
 #ifndef __ANDROID_API_S__
 #define __ANDROID_API_S__ 31
 #endif
@@ -25,7 +30,9 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
     jclass classExecutable;
     LOGI("init to SDK %d", sdkVersion);
     switch (sdkVersion) {
+        case __ANDROID_API_S_L__:
         case __ANDROID_API_S__:
+            kAccPreCompiled = 0x00800000;
         case __ANDROID_API_R__:
             classExecutable = (*env)->FindClass(env, "java/lang/reflect/Executable");
             fieldArtMethod = (*env)->GetFieldID(env, classExecutable, "artMethod", "J");
@@ -35,16 +42,11 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
             OFFSET_ArtMehod_in_Object = 0;
             OFFSET_access_flags_in_ArtMethod = 4;
             //OFFSET_dex_method_index_in_ArtMethod = 4*3;
-            if(sdkVersion == __ANDROID_API_S__)
-            {
-                // Android 12, download system image from https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp1.210122.020.a3-b74909a0.zip
-                // Unzip and take system.img, mount this image as ext4, get art lib at path below
-                // /apex/com.android.art/lib64/libart.so
-                // 4 int, two short...
+            if (sdkVersion >= __ANDROID_API_S__)
                 OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
-                    roundUpToPtrSize(16) + pointer_size;
-            }
-            else OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
+                    roundUpToPtrSize(4 * 3 + 2 * 2) + pointer_size;
+            else
+                OFFSET_entry_point_from_quick_compiled_code_in_ArtMethod =
                     roundUpToPtrSize(4 * 4 + 2 * 2) + pointer_size;
             break;
         case __ANDROID_API_O_MR1__:
@@ -106,6 +108,9 @@ static void setNonCompilable(void *method) {
     uint32_t access_flags = getFlags(method);
     uint32_t old_flags = access_flags;
     access_flags |= kAccCompileDontBother;
+    if (SDKVersion >= __ANDROID_API_R__) {
+        access_flags &= ~kAccPreCompiled;
+    }
     setFlags(method, access_flags);
     LOGI("setNonCompilable: change access flags from 0x%x to 0x%x", old_flags, access_flags);
 
