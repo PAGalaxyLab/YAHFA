@@ -16,26 +16,38 @@ static InitClassFunc MakeInitializedClassesVisiblyInitialized = NULL;
 static int shouldVisiblyInit();
 static int findInitClassSymbols(JNIEnv *env);
 
+// classlinker is 3 pointers away from JavaVM
+// https://github.com/PAGalaxyLab/YAHFA/issues/163
+static int findJavaVmOffsetInRuntime(JavaVM *jvm, void **runtime) {
+    int offset = 0;
+    while(*runtime != jvm) {
+        runtime++;
+        offset += sizeof(void *);
+
+        // limit
+        if(offset > 600) {
+            return -1;
+        }
+    }
+    return offset;
+}
+
 static int findInitClassSymbols(JNIEnv *env) {
 #ifndef NEED_CLASS_VISIBLY_INITIALIZED
     return 1;
 #else
+    int OFFSET_javavm_in_Runtime;
     int OFFSET_classlinker_in_Runtime;
-    
-    // Android S
-    if (SDKVersion == 31) {
-#if defined(__x86_64__) || defined(__aarch64__)
-        OFFSET_classlinker_in_Runtime = 496;
-#endif
+    int OFFSET_pointers_classlinker_to_javavm;
+
+    JavaVM *jvm = NULL;
+    (*env)->GetJavaVM(env, &jvm);
+    LOGI("JavaVM is %p", jvm);
+
+    if(SDKVersion == __ANDROID_API_S__ || SDKVersion == __ANDROID_API_R__) {
+        OFFSET_pointers_classlinker_to_javavm = -3;
     }
-    
-    if(SDKVersion == __ANDROID_API_R__) {
-#if defined(__x86_64__) || defined(__aarch64__)
-        OFFSET_classlinker_in_Runtime = 472;
-#else
-        OFFSET_classlinker_in_Runtime = 276;
-#endif
-    }
+
     if(dlfunc_init(env) != JNI_OK) {
         LOGE("dlfunc init failed");
         return 1;
@@ -57,8 +69,18 @@ static int findInitClassSymbols(JNIEnv *env) {
             return 1;
         }
         LOGI("runtime bss is at %p, runtime instance is at %p", runtime_bss, runtime);
+
+        OFFSET_javavm_in_Runtime = findJavaVmOffsetInRuntime(jvm, runtime);
+        if(OFFSET_javavm_in_Runtime < 0) {
+            LOGE("failed to find JavaVM in Runtime");
+            return 1;
+        }
+
+        OFFSET_classlinker_in_Runtime = OFFSET_javavm_in_Runtime +
+                                        OFFSET_pointers_classlinker_to_javavm * sizeof(void *);
         classLinker = readAddr(runtime + OFFSET_classlinker_in_Runtime);
-        LOGI("classLinker is at %p, value %p", runtime + OFFSET_classlinker_in_Runtime, classLinker);
+        LOGI("classLinker is at %p, value %p, offset in Runtime %d",
+             runtime + OFFSET_classlinker_in_Runtime, classLinker, OFFSET_classlinker_in_Runtime);
 
         MakeInitializedClassesVisiblyInitialized = dlfunc_dlsym(env, handle,
                 "_ZN3art11ClassLinker40MakeInitializedClassesVisiblyInitializedEPNS_6ThreadEb");
