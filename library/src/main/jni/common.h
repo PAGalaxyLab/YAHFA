@@ -8,6 +8,15 @@
 #include <android/log.h>
 #include <stdint.h>
 
+// Android 12+
+#ifndef __ANDROID_API_S_L__
+#define __ANDROID_API_S_L__ 32
+#endif
+
+#ifndef __ANDROID_API_S__
+#define __ANDROID_API_S__ 31
+#endif
+
 extern int SDKVersion;
 
 #define LOG_TAG "YAHFA-Native"

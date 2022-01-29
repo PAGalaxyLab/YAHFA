@@ -3,8 +3,12 @@
 #include <stdint.h>
 
 #include "common.h"
+
+#if defined(__aarch64__)
 #include <dlfcn.h>
 #include "dlfunc.h"
+#define NEED_CLASS_VISIBLY_INITIALIZED
+#endif
 
 static char *classLinker = NULL;
 typedef void (*InitClassFunc)(void *, void *, int);
@@ -13,6 +17,9 @@ static int shouldVisiblyInit();
 static int findInitClassSymbols(JNIEnv *env);
 
 static int findInitClassSymbols(JNIEnv *env) {
+#ifndef NEED_CLASS_VISIBLY_INITIALIZED
+    return 1;
+#else
     int OFFSET_classlinker_in_Runtime;
     
     // Android S
@@ -64,6 +71,7 @@ static int findInitClassSymbols(JNIEnv *env) {
              MakeInitializedClassesVisiblyInitialized);
     }
     return 0;
+#endif
 }
 
 jlong __attribute__((naked)) Java_lab_galaxy_yahfa_HookMain_00024Utils_getThread(JNIEnv *env, jclass clazz) {

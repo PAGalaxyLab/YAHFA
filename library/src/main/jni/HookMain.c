@@ -16,14 +16,6 @@ static uint32_t kAccPreCompiled = 0x00200000;
 
 static jfieldID fieldArtMethod = NULL;
 
-// Android 12+
-#ifndef __ANDROID_API_S_L__
-#define __ANDROID_API_S_L__ 32
-#endif
-
-#ifndef __ANDROID_API_S__
-#define __ANDROID_API_S__ 31
-#endif
 
 void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVersion) {
     SDKVersion = sdkVersion;
