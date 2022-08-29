@@ -22,6 +22,7 @@ void Java_lab_galaxy_yahfa_HookMain_init(JNIEnv *env, jclass clazz, jint sdkVers
     jclass classExecutable;
     LOGI("init to SDK %d", sdkVersion);
     switch (sdkVersion) {
+        case __ANDROID_API_T__:
         case __ANDROID_API_S_L__:
         case __ANDROID_API_S__:
             kAccPreCompiled = 0x00800000;

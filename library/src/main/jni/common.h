@@ -8,6 +8,11 @@
 #include <android/log.h>
 #include <stdint.h>
 
+// Android 13
+#ifndef __ANDROID_API_T__
+#define __ANDROID_API_T__ 33
+#endif
+
 // Android 12+
 #ifndef __ANDROID_API_S_L__
 #define __ANDROID_API_S_L__ 32
